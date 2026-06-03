@@ -11,29 +11,21 @@ import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Game {
-    private final static double ONE_SEC = 1;
+    private final static double ONE_SEC_TIME = 1;
+    private final static double UPDATE_TIME = 1d / 60;
 
-    private long window;
+    private final long window;
 
+    private int updates;
     private int frames;
-    private double lastFrameTime;
 
-    public void run() {
-        init();
-
-        while (!glfwWindowShouldClose(window)) {
-            loop();
-        }
-
-        terminate();
-    }
-
-    private void init() {
+    public Game() {
         System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
         GLFWErrorCallback.createPrint(System.err).set();
@@ -78,24 +70,60 @@ public class Game {
 
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
 
+        updates = 0;
         frames = 0;
-        lastFrameTime = glfwGetTime();
     }
 
-    private void loop() {
-        frames++;
-        double now = glfwGetTime();
-        if (now - lastFrameTime > ONE_SEC) {
-            System.out.println("FPS: " + frames);
-            frames = 0;
-            lastFrameTime = now;
+    public void run() {
+        double currentTime = glfwGetTime();
+        double nextUpdateTime = currentTime + UPDATE_TIME;
+        double nextOneSecTime = currentTime + ONE_SEC_TIME;
+
+        while (!shouldClose()) {
+            processInputs();
+
+            currentTime = glfwGetTime();
+            while (currentTime >= nextUpdateTime) {
+                update();
+                nextUpdateTime += UPDATE_TIME;
+            }
+
+            render();
+
+            while (currentTime >= nextOneSecTime) {
+                oneSecUpdate();
+                nextOneSecTime += ONE_SEC_TIME;
+            }
         }
+
+        terminate();
+    }
+
+    private void processInputs() {
+        glfwPollEvents();
+    }
+
+    private void update() {
+        updates++;
+    }
+
+    private void oneSecUpdate() {
+        System.out.println("UPS: " + updates);
+        System.out.println("FPS: " + frames);
+        updates = 0;
+        frames = 0;
+    }
+
+    private void render() {
+        frames++;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glfwSwapBuffers(window);
+    }
 
-        glfwPollEvents();
+    private boolean shouldClose() {
+        return glfwWindowShouldClose(window);
     }
 
     private void terminate() {
