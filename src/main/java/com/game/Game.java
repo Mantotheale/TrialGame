@@ -28,6 +28,7 @@ public class Game {
 
     private final int shaderProgram;
     private final int vao;
+    private final int ebo;
 
     private int updates;
     private int frames;
@@ -78,14 +79,24 @@ public class Game {
         glClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
         float[] vertices = {
-            0, 0.5f, 0,
             -0.5f, -0.5f, 0,
-            0.5f, -0.5f, 0
+            0.5f, -0.5f, 0,
+            0.5f, 0.5f, 0,
+            -0.5f, 0.5f, 0
         };
 
         int vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+
+        int[] indices = {
+            0, 1, 3,
+            1, 2, 3
+        };
+
+        ebo = glGenBuffers();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
 
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
@@ -193,7 +204,8 @@ public class Game {
 
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
     }
