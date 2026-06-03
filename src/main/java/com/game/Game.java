@@ -14,6 +14,10 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Game {
@@ -21,6 +25,9 @@ public class Game {
     private final static double UPDATE_TIME = 1d / 60;
 
     private final long window;
+
+    private final int shaderProgram;
+    private final int vao;
 
     private int updates;
     private int frames;
@@ -68,7 +75,72 @@ public class Game {
 
         GL.createCapabilities();
 
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
+
+        float[] vertices = {
+            0, 0.5f, 0,
+            -0.5f, -0.5f, 0,
+            0.5f, -0.5f, 0
+        };
+
+        int vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+
+        vao = glGenVertexArrays();
+        glBindVertexArray(vao);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * Float.BYTES, 0);
+        glEnableVertexAttribArray(0);
+
+        String vertexShaderSource = """
+                #version 330
+                
+                layout (location = 0) in vec3 aPos;
+                
+                out vec4 vertexColor;
+                
+                void main() {
+                    gl_Position = vec4(aPos, 1.0);
+                    vertexColor = vec4(0.6148, 0.8023, 0.8843, 1.0);
+                }
+                """;
+        int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, vertexShaderSource);
+        glCompileShader(vertexShader);
+        if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
+            throw new RuntimeException("Couldn't compile vertex the shader");
+        }
+
+        String fragmentShaderSource = """
+                #version 330
+                
+                out vec4 FragColor;
+                
+                in vec4 vertexColor;
+                
+                void main() {
+                    FragColor = vertexColor;
+                }
+                """;
+        int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, fragmentShaderSource);
+        glCompileShader(fragmentShader);
+        if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
+            throw new RuntimeException("Couldn't compile the fragment shader");
+        }
+
+        shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+        glLinkProgram(shaderProgram);
+        if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
+            throw new RuntimeException("Couldn't link the shader program");
+        }
+
+        glDetachShader(shaderProgram, vertexShader);
+        glDetachShader(shaderProgram, fragmentShader);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
 
         updates = 0;
         frames = 0;
@@ -118,6 +190,10 @@ public class Game {
         frames++;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
     }
