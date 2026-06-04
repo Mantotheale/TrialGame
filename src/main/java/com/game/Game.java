@@ -6,6 +6,7 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Objects;
 
@@ -16,8 +17,8 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
-import static org.lwjgl.opengl.GL30.glGenVertexArrays;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Game {
@@ -29,6 +30,7 @@ public class Game {
     private final int shaderProgram;
     private final int vao;
     private final int ebo;
+    private final int texture;
 
     private int updates;
     private int frames;
@@ -44,7 +46,7 @@ public class Game {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        window = glfwCreateWindow(1280, 720, "Hello World!", NULL, NULL);
+        window = glfwCreateWindow(720, 720, "Hello World!", NULL, NULL);
         if (window == NULL)
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -79,10 +81,10 @@ public class Game {
         glClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
         float[] vertices = {
-            -0.5f, -0.5f, 0,
-            0.5f, -0.5f, 0,
-            0.5f, 0.5f, 0,
-            -0.5f, 0.5f, 0
+            -0.5f, -0.5f, 0, 0, 0,
+            0.5f, -0.5f, 0, 1, 0,
+            0.5f, 0.5f, 0, 1, 1,
+            -0.5f, 0.5f, 0, 0, 1
         };
 
         int vbo = glGenBuffers();
@@ -100,19 +102,44 @@ public class Game {
 
         vao = glGenVertexArrays();
         glBindVertexArray(vao);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * Float.BYTES, 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * Float.BYTES, 0);
         glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
+        glEnableVertexAttribArray(1);
+
+        texture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer width = stack.mallocInt(1);
+            IntBuffer height = stack.mallocInt(1);
+            IntBuffer channels = stack.mallocInt(1);
+
+            stbi_set_flip_vertically_on_load(true);
+            ByteBuffer image = stbi_load("src/main/resources/images/reshiram.png", width, height, channels, 4);
+            if (image == null) { throw new RuntimeException("Couldn't open image"); }
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(image);
+        }
 
         String vertexShaderSource = """
                 #version 330
                 
                 layout (location = 0) in vec3 aPos;
+                layout (location = 1) in vec2 aTexCoord;
                 
-                out vec4 vertexColor;
+                out vec2 texCoord;
                 
                 void main() {
                     gl_Position = vec4(aPos, 1.0);
-                    vertexColor = vec4(0.6148, 0.8023, 0.8843, 1.0);
+                    texCoord = aTexCoord;
                 }
                 """;
         int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -127,10 +154,12 @@ public class Game {
                 
                 out vec4 FragColor;
                 
-                in vec4 vertexColor;
+                in vec2 texCoord;
+                
+                uniform sampler2D tex;
                 
                 void main() {
-                    FragColor = vertexColor;
+                    FragColor = texture(tex, texCoord);
                 }
                 """;
         int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -152,6 +181,9 @@ public class Game {
         glDetachShader(shaderProgram, fragmentShader);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         updates = 0;
         frames = 0;
@@ -205,6 +237,7 @@ public class Game {
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBindTexture(GL_TEXTURE_2D, texture);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
