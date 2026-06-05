@@ -1,5 +1,6 @@
 package com.game;
 
+import org.joml.Matrix4f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -7,6 +8,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Objects;
 
@@ -29,8 +31,10 @@ public class Game {
 
     private final int shaderProgram;
     private final int vao;
+    private final int vbo;
     private final int ebo;
     private final int texture;
+    private final Matrix4f model;
 
     private int updates;
     private int frames;
@@ -87,7 +91,7 @@ public class Game {
             -0.5f, 0.5f, 0, 0, 1
         };
 
-        int vbo = glGenBuffers();
+        vbo = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
 
@@ -137,8 +141,10 @@ public class Game {
                 
                 out vec2 texCoord;
                 
+                uniform mat4 model;
+                
                 void main() {
-                    gl_Position = vec4(aPos, 1.0);
+                    gl_Position = model * vec4(aPos, 1.0);
                     texCoord = aTexCoord;
                 }
                 """;
@@ -185,6 +191,8 @@ public class Game {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+        model = new Matrix4f();
+
         updates = 0;
         frames = 0;
     }
@@ -220,6 +228,18 @@ public class Game {
 
     private void update() {
         updates++;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            model.translate(0, 1 * (float) UPDATE_TIME, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            model.translate(0, -1 * (float) UPDATE_TIME, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            model.translate(-1 * (float) UPDATE_TIME, 0, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            model.translate(1 * (float) UPDATE_TIME, 0, 0);
+        }
     }
 
     private void oneSecUpdate() {
@@ -238,6 +258,16 @@ public class Game {
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBindTexture(GL_TEXTURE_2D, texture);
+
+        int modelLocation = glGetUniformLocation(shaderProgram, "model");
+        if (modelLocation == -1)
+            throw new RuntimeException("Couldn't locate model uniform");
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer buffer =  model.get(stack.mallocFloat(16));
+            glUniformMatrix4fv(modelLocation, false, buffer);
+        }
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
@@ -248,6 +278,11 @@ public class Game {
     }
 
     private void terminate() {
+        glDeleteVertexArrays(vao);
+        glDeleteBuffers(vbo);
+        glDeleteBuffers(ebo);
+        glDeleteProgram(shaderProgram);
+
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
 
