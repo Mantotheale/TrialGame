@@ -1,6 +1,7 @@
 package com.game;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -37,6 +38,11 @@ public class Game {
     private final int ebo;
     private final int texture;
     private final Matrix4f model;
+    private final Matrix4f view;
+    private final Matrix4f projection;
+    private final Vector3f worldUp;
+    private final Vector3f cameraPosition;
+    private final Vector3f cameraTarget;
 
     private int updates;
     private int frames;
@@ -153,9 +159,11 @@ public class Game {
                 out vec2 texCoord;
                 
                 uniform mat4 model;
+                uniform mat4 view;
+                uniform mat4 projection;
                 
                 void main() {
-                    gl_Position = model * vec4(aPos, 1.0);
+                    gl_Position = projection * view * model * vec4(aPos, 1.0);
                     texCoord = aTexCoord;
                 }
                 """;
@@ -203,6 +211,11 @@ public class Game {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         model = new Matrix4f();
+        worldUp = new Vector3f(0, 1, 0);
+        cameraPosition = new Vector3f(0, 0, 20);
+        cameraTarget =  new Vector3f(0);
+        view = new Matrix4f().lookAt(cameraPosition, cameraTarget, worldUp);
+        projection = new Matrix4f().ortho(-5, 5, -5, 5, 0, 20);
 
         updates = 0;
         frames = 0;
@@ -251,6 +264,24 @@ public class Game {
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
             model.translate(1 * (float) UPDATE_TIME, 0, 0);
         }
+
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            cameraPosition.add(0, 2 * (float) UPDATE_TIME, 0);
+            cameraTarget.add(0, 2 * (float) UPDATE_TIME, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            cameraPosition.sub(0, 2 * (float) UPDATE_TIME, 0);
+            cameraTarget.sub(0, 2 * (float) UPDATE_TIME, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            cameraPosition.sub(2 * (float) UPDATE_TIME, 0, 0);
+            cameraTarget.sub(2 * (float) UPDATE_TIME, 0, 0);
+        }
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            cameraPosition.add(2 * (float) UPDATE_TIME, 0, 0);
+            cameraTarget.add(2 * (float) UPDATE_TIME, 0, 0);
+        }
+        view.setLookAt(cameraPosition, cameraTarget, worldUp);
     }
 
     private void oneSecUpdate() {
@@ -277,6 +308,24 @@ public class Game {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer buffer =  model.get(stack.mallocFloat(16));
             glUniformMatrix4fv(modelLocation, false, buffer);
+        }
+
+        int viewLocation = glGetUniformLocation(shaderProgram, "view");
+        if (viewLocation == -1)
+            throw new RuntimeException("Couldn't locate view uniform");
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer buffer =  view.get(stack.mallocFloat(16));
+            glUniformMatrix4fv(viewLocation, false, buffer);
+        }
+
+        int projectionLocation = glGetUniformLocation(shaderProgram, "projection");
+        if (projectionLocation == -1)
+            throw new RuntimeException("Couldn't locate projection uniform");
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer buffer =  projection.get(stack.mallocFloat(16));
+            glUniformMatrix4fv(projectionLocation, false, buffer);
         }
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
