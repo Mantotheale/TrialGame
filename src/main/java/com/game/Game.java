@@ -28,6 +28,8 @@ public class Game {
     private final static double UPDATE_TIME = 1d / 60;
 
     private final long window;
+    private int width;
+    private int height;
 
     private final int shaderProgram;
     private final int vao;
@@ -50,13 +52,22 @@ public class Game {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        window = glfwCreateWindow(720, 720, "Hello World!", NULL, NULL);
+        width = 720;
+        height = 720;
+        window = glfwCreateWindow(width, height, "Hello World!", NULL, NULL);
         if (window == NULL)
             throw new RuntimeException("Failed to create the GLFW window");
 
         glfwSetKeyCallback(window, (window, key, _, action, _) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
                 glfwSetWindowShouldClose(window, true);
+        });
+
+        glfwSetFramebufferSizeCallback(window, (_, width, height) -> {
+            this.width = width;
+            this.height = height;
+
+            glViewport(0, 0, width, height);
         });
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
