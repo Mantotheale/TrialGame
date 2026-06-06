@@ -1,5 +1,10 @@
 package com.game;
 
+import com.game.renderer.indexbuffer.IndexBuffer;
+import com.game.renderer.shaderprogram.ShaderProgram;
+import com.game.renderer.texture.Texture;
+import com.game.renderer.vertexarray.VertexArray;
+import com.game.renderer.vertexbuffer.VertexBuffer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.Version;
@@ -31,12 +36,12 @@ public class Game {
     private int width;
     private int height;
 
-    private final int shaderProgram;
-    private final int vao;
-    private final int vbo;
-    private final int ebo;
-    private final int texture1;
-    private final int texture2;
+    private final ShaderProgram shaderProgram;
+    private final VertexArray vao;
+    private final VertexBuffer vbo;
+    private final IndexBuffer ebo;
+    private final Texture texture1;
+    private final Texture texture2;
     private final Matrix4f model1;
     private final Matrix4f model2;
     private final Matrix4f view;
@@ -110,8 +115,8 @@ public class Game {
             -0.5f, 0.5f, 0, 0, 1
         };
 
-        vbo = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        vbo = VertexBuffer.create(glGenBuffers());
+        glBindBuffer(GL_ARRAY_BUFFER, vbo.id());
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
 
         int[] indices = {
@@ -119,19 +124,19 @@ public class Game {
             1, 2, 3
         };
 
-        ebo = glGenBuffers();
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        ebo = IndexBuffer.create(glGenBuffers());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id());
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
 
-        vao = glGenVertexArrays();
-        glBindVertexArray(vao);
+        vao = VertexArray.create(glGenVertexArrays());
+        glBindVertexArray(vao.id());
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * Float.BYTES, 0);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
         glEnableVertexAttribArray(1);
 
-        texture1 = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, texture1);
+        texture1 = Texture.create(glGenTextures());
+        glBindTexture(GL_TEXTURE_2D, texture1.id());
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -152,8 +157,8 @@ public class Game {
             stbi_image_free(image);
         }
 
-        texture2 = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        texture2 = Texture.create(glGenTextures());
+        glBindTexture(GL_TEXTURE_2D, texture2.id());
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -218,16 +223,16 @@ public class Game {
             throw new RuntimeException("Couldn't compile the fragment shader");
         }
 
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
-        if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
+        shaderProgram = ShaderProgram.create(glCreateProgram());
+        glAttachShader(shaderProgram.id(), vertexShader);
+        glAttachShader(shaderProgram.id(), fragmentShader);
+        glLinkProgram(shaderProgram.id());
+        if (glGetProgrami(shaderProgram.id(), GL_LINK_STATUS) == GL_FALSE) {
             throw new RuntimeException("Couldn't link the shader program");
         }
 
-        glDetachShader(shaderProgram, vertexShader);
-        glDetachShader(shaderProgram, fragmentShader);
+        glDetachShader(shaderProgram.id(), vertexShader);
+        glDetachShader(shaderProgram.id(), fragmentShader);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
@@ -322,12 +327,12 @@ public class Game {
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+        glUseProgram(shaderProgram.id());
+        glBindVertexArray(vao.id());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id());
+        glBindTexture(GL_TEXTURE_2D, texture2.id());
 
-        int modelLocation2 = glGetUniformLocation(shaderProgram, "model");
+        int modelLocation2 = glGetUniformLocation(shaderProgram.id(), "model");
         if (modelLocation2 == -1)
             throw new RuntimeException("Couldn't locate model uniform");
 
@@ -336,7 +341,7 @@ public class Game {
             glUniformMatrix4fv(modelLocation2, false, buffer);
         }
 
-        int viewLocation2 = glGetUniformLocation(shaderProgram, "view");
+        int viewLocation2 = glGetUniformLocation(shaderProgram.id(), "view");
         if (viewLocation2 == -1)
             throw new RuntimeException("Couldn't locate view uniform");
 
@@ -345,7 +350,7 @@ public class Game {
             glUniformMatrix4fv(viewLocation2, false, buffer);
         }
 
-        int projectionLocation2 = glGetUniformLocation(shaderProgram, "projection");
+        int projectionLocation2 = glGetUniformLocation(shaderProgram.id(), "projection");
         if (projectionLocation2 == -1)
             throw new RuntimeException("Couldn't locate projection uniform");
 
@@ -356,12 +361,12 @@ public class Game {
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        glUseProgram(shaderProgram);
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBindTexture(GL_TEXTURE_2D, texture1);
+        glUseProgram(shaderProgram.id());
+        glBindVertexArray(vao.id());
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id());
+        glBindTexture(GL_TEXTURE_2D, texture1.id());
 
-        int modelLocation1 = glGetUniformLocation(shaderProgram, "model");
+        int modelLocation1 = glGetUniformLocation(shaderProgram.id(), "model");
         if (modelLocation1 == -1)
             throw new RuntimeException("Couldn't locate model uniform");
 
@@ -370,7 +375,7 @@ public class Game {
             glUniformMatrix4fv(modelLocation1, false, buffer);
         }
 
-        int viewLocation1 = glGetUniformLocation(shaderProgram, "view");
+        int viewLocation1 = glGetUniformLocation(shaderProgram.id(), "view");
         if (viewLocation1 == -1)
             throw new RuntimeException("Couldn't locate view uniform");
 
@@ -379,7 +384,7 @@ public class Game {
             glUniformMatrix4fv(viewLocation1, false, buffer);
         }
 
-        int projectionLocation1 = glGetUniformLocation(shaderProgram, "projection");
+        int projectionLocation1 = glGetUniformLocation(shaderProgram.id(), "projection");
         if (projectionLocation1 == -1)
             throw new RuntimeException("Couldn't locate projection uniform");
 
@@ -398,12 +403,12 @@ public class Game {
     }
 
     private void terminate() {
-        glDeleteVertexArrays(vao);
-        glDeleteBuffers(vbo);
-        glDeleteBuffers(ebo);
-        glDeleteTextures(texture1);
-        glDeleteTextures(texture2);
-        glDeleteProgram(shaderProgram);
+        glDeleteVertexArrays(vao.id());
+        glDeleteBuffers(vbo.id());
+        glDeleteBuffers(ebo.id());
+        glDeleteTextures(texture1.id());
+        glDeleteTextures(texture2.id());
+        glDeleteProgram(shaderProgram.id());
 
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
