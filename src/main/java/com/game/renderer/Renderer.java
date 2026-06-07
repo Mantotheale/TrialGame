@@ -1,15 +1,86 @@
 package com.game.renderer;
 
 import com.game.camera.Camera;
+import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.FloatBuffer;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
 public class Renderer {
-    public Renderer() { }
+    private static final int MAX_QUAD_COUNT = 10;
+    private static final int MAX_TEXTURE_COUNT = 16;
 
-    public void beginScene(Camera camera) { }
+    private final QuadArrayBuffer quadArrayBuffer;
+    private final ShaderProgram shaderProgram;
+    private final List<RenderCommand> pushedCommands;
+    private Camera camera;
 
-    public void submit(Transform transform, Texture texture) { }
+    public Renderer() {
+        pushedCommands = new ArrayList<>();
 
-    public void endScene() { }
+        float[] vertices = {
+                -0.5f, -0.5f, 0, 0, 0,
+                0.5f, -0.5f, 0, 1, 0,
+                0.5f, 0.5f, 0, 1, 1,
+                -0.5f, 0.5f, 0, 0, 1
+        };
+
+        quadArrayBuffer = new QuadArrayBuffer(1, 5 * Float.BYTES);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            FloatBuffer verticesBuffer = stack.mallocFloat(vertices.length);
+            verticesBuffer.put(vertices).flip();
+            quadArrayBuffer.setData(verticesBuffer);
+        }
+
+        shaderProgram = ShaderProgram.fromPaths(
+                Path.of("src/main/resources/shaders/vertexshader.vert"),
+                Path.of("src/main/resources/shaders/fragmentshader.frag")
+        );
+    }
+
+    public void beginScene(Camera camera) {
+        this.camera = camera;
+    }
+
+    public void submit(Transform transform, Texture texture) {
+        if (pushedCommands.size() >= MAX_QUAD_COUNT)
+            throw new IllegalStateException("Too many pushed commands");
+
+        pushedCommands.add(new RenderCommand(transform, texture));
+    }
+
+    public void endScene() {
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram.id());
+
+        shaderProgram.setMatrix4f("viewProjection", camera.matrix());
+
+        for (RenderCommand command : pushedCommands) {
+            glBindVertexArray(quadArrayBuffer.id());
+            glBindTexture(GL_TEXTURE_2D, command.texture.id());
+
+            shaderProgram.setMatrix4f("model", command.transform.matrix());
+
+            glDrawElements(GL_TRIANGLES, QuadArrayBuffer.INDICES_PER_QUAD, GL_UNSIGNED_INT, 0);
+        }
+
+        pushedCommands.clear();
+        camera = null;
+    }
+
+    public void delete() {
+        quadArrayBuffer.delete();
+        shaderProgram.delete();
+    }
+
+    private record RenderCommand(Transform transform, Texture texture) { }
 }
