@@ -82,5 +82,13 @@ public class Renderer {
         shaderProgram.delete();
     }
 
+    public void setViewport(int originX, int originY, int width, int height) {
+        glViewport(originX, originY, width, height);
+    }
+
+    public void setClearColor(float r, float g, float b, float a) {
+        glClearColor(r, g, b, a);
+    }
+
     private record RenderCommand(Transform transform, Texture texture) { }
 }
