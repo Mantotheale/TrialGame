@@ -1,21 +1,24 @@
 package com.game;
 
-import com.game.renderer.indexbuffer.IndexBuffer;
-import com.game.renderer.shaderprogram.ShaderProgram;
+import com.game.camera.Camera;
+import com.game.camera.CameraProjection;
 import com.game.renderer.texture.Texture;
-import com.game.renderer.vertexarray.VertexArray;
-import com.game.renderer.vertexbuffer.VertexBuffer;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
+import com.game.renderer.texture.TextureAttributes;
+import com.game.renderer.texture.TextureMagnifyingFilter;
+import com.game.renderer.texture.TextureMinifyingFilter;
+import com.game.transform.Rotation;
+import com.game.transform.Scale;
+import com.game.transform.Transform;
+import com.game.transform.Translation;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.file.Path;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -25,7 +28,6 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.stb.STBImage.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Game {
@@ -36,20 +38,15 @@ public class Game {
     private int width;
     private int height;
 
-    private final ShaderProgram shaderProgram;
-    private final VertexArray vao;
-    private final VertexBuffer vbo;
-    private final IndexBuffer ebo;
+    private final int shaderProgram;
+    private final int vao;
+    private final int vbo;
+    private final int ebo;
     private final Texture texture1;
     private final Texture texture2;
-    private final Matrix4f model1;
-    private final Matrix4f model2;
-    private final Matrix4f view;
-    private final Matrix4f projection;
-    private final Vector3f worldUp;
-    private final Vector3f cameraPosition;
-    private final Vector3f cameraTarget;
-
+    private Transform transform1;
+    private Transform transform2;
+    private final Camera camera;
 
     private int updates;
     private int frames;
@@ -115,8 +112,8 @@ public class Game {
             -0.5f, 0.5f, 0, 0, 1
         };
 
-        vbo = VertexBuffer.create(glGenBuffers());
-        glBindBuffer(GL_ARRAY_BUFFER, vbo.id());
+        vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
 
         int[] indices = {
@@ -124,60 +121,25 @@ public class Game {
             1, 2, 3
         };
 
-        ebo = IndexBuffer.create(glGenBuffers());
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id());
+        ebo = glGenBuffers();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_STATIC_DRAW);
 
-        vao = VertexArray.create(glGenVertexArrays());
-        glBindVertexArray(vao.id());
+        vao = glGenVertexArrays();
+        glBindVertexArray(vao);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * Float.BYTES, 0);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
         glEnableVertexAttribArray(1);
 
-        texture1 = Texture.create(glGenTextures());
-        glBindTexture(GL_TEXTURE_2D, texture1.id());
+        TextureAttributes texAttr = new TextureAttributes.Builder()
+                .magnifyingFilter(TextureMagnifyingFilter.LINEAR)
+                .minifyingFilter(TextureMinifyingFilter.LINEAR_MIPMAP_LINEAR)
+                .mipmap(true)
+                .build();
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer width = stack.mallocInt(1);
-            IntBuffer height = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-
-            stbi_set_flip_vertically_on_load(true);
-            ByteBuffer image = stbi_load("src/main/resources/images/reshiram.png", width, height, channels, 4);
-            if (image == null) { throw new RuntimeException("Couldn't open image"); }
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            stbi_image_free(image);
-        }
-
-        texture2 = Texture.create(glGenTextures());
-        glBindTexture(GL_TEXTURE_2D, texture2.id());
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer width = stack.mallocInt(1);
-            IntBuffer height = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-
-            stbi_set_flip_vertically_on_load(true);
-            ByteBuffer image = stbi_load("src/main/resources/images/background.png", width, height, channels, 4);
-            if (image == null) { throw new RuntimeException("Couldn't open image"); }
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            stbi_image_free(image);
-        }
+        texture1 = new Texture(texAttr, Path.of("src/main/resources/images/reshiram.png"));
+        texture2 = new Texture(texAttr, Path.of("src/main/resources/images/background.png"));
 
         String vertexShaderSource = """
                 #version 330
@@ -188,11 +150,13 @@ public class Game {
                 out vec2 texCoord;
                 
                 uniform mat4 model;
-                uniform mat4 view;
-                uniform mat4 projection;
+                uniform mat4 viewProjection;
+                //uniform mat4 view;
+                //uniform mat4 projection;
                 
                 void main() {
-                    gl_Position = projection * view * model * vec4(aPos, 1.0);
+                    gl_Position = viewProjection * model * vec4(aPos, 1.0);
+                    //gl_Position = projection * view * model * vec4(aPos, 1.0);
                     texCoord = aTexCoord;
                 }
                 """;
@@ -223,30 +187,29 @@ public class Game {
             throw new RuntimeException("Couldn't compile the fragment shader");
         }
 
-        shaderProgram = ShaderProgram.create(glCreateProgram());
-        glAttachShader(shaderProgram.id(), vertexShader);
-        glAttachShader(shaderProgram.id(), fragmentShader);
-        glLinkProgram(shaderProgram.id());
-        if (glGetProgrami(shaderProgram.id(), GL_LINK_STATUS) == GL_FALSE) {
+        shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+        glLinkProgram(shaderProgram);
+        if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
             throw new RuntimeException("Couldn't link the shader program");
         }
 
-        glDetachShader(shaderProgram.id(), vertexShader);
-        glDetachShader(shaderProgram.id(), fragmentShader);
+        glDetachShader(shaderProgram, vertexShader);
+        glDetachShader(shaderProgram, fragmentShader);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        model1 = new Matrix4f().translate(0, 0, 1);
-        worldUp = new Vector3f(0, 1, 0);
-        cameraPosition = new Vector3f(0, 0, 20);
-        cameraTarget =  new Vector3f(0);
-        view = new Matrix4f().lookAt(cameraPosition, cameraTarget, worldUp);
-        projection = new Matrix4f().ortho(-5, 5, -5, 5, 0.01f, 20);
+        camera = new Camera(
+                new CameraProjection.Orthographic(-5, 5, -5, 5, 0.01f, 20),
+                new Transform(new Translation(0, 0, 20), Rotation.fromDirection(Rotation.WORLD_FRONT), new Scale())
+        );
 
-        model2 = new Matrix4f().scale(10);
+        transform1 = new Transform(new Translation(0, 0, 1), new Rotation(), new Scale());
+        transform2 = new Transform(new Translation(), new Rotation(), new Scale(10));
 
         updates = 0;
         frames = 0;
@@ -284,35 +247,30 @@ public class Game {
     private void update() {
         updates++;
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            model1.translate(0, 1 * (float) UPDATE_TIME, 0);
+            transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME, 0);
         }
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            model1.translate(0, -1 * (float) UPDATE_TIME, 0);
+            transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME, 0);
         }
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            model1.translate(-1 * (float) UPDATE_TIME, 0, 0);
+            transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0, 0);
         }
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            model1.translate(1 * (float) UPDATE_TIME, 0, 0);
+            transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0, 0);
         }
 
         if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            cameraPosition.add(0, 2 * (float) UPDATE_TIME, 0);
-            cameraTarget.add(0, 2 * (float) UPDATE_TIME, 0);
+            camera.move(new Translation(0, 2 * (float) UPDATE_TIME, 0));
         }
         if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            cameraPosition.sub(0, 2 * (float) UPDATE_TIME, 0);
-            cameraTarget.sub(0, 2 * (float) UPDATE_TIME, 0);
+            camera.move(new Translation(0, -2 * (float) UPDATE_TIME, 0));
         }
         if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-            cameraPosition.sub(2 * (float) UPDATE_TIME, 0, 0);
-            cameraTarget.sub(2 * (float) UPDATE_TIME, 0, 0);
+            camera.move(new Translation(-2 * (float) UPDATE_TIME, 0, 0));
         }
         if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-            cameraPosition.add(2 * (float) UPDATE_TIME, 0, 0);
-            cameraTarget.add(2 * (float) UPDATE_TIME, 0, 0);
+            camera.move(new Translation(2 * (float) UPDATE_TIME, 0, 0));
         }
-        view.setLookAt(cameraPosition, cameraTarget, worldUp);
     }
 
     private void oneSecUpdate() {
@@ -327,70 +285,52 @@ public class Game {
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram.id());
-        glBindVertexArray(vao.id());
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id());
+        glUseProgram(shaderProgram);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBindTexture(GL_TEXTURE_2D, texture2.id());
 
-        int modelLocation2 = glGetUniformLocation(shaderProgram.id(), "model");
+        int modelLocation2 = glGetUniformLocation(shaderProgram, "model");
         if (modelLocation2 == -1)
             throw new RuntimeException("Couldn't locate model uniform");
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer buffer =  model2.get(stack.mallocFloat(16));
+            FloatBuffer buffer =  transform2.matrix().get(stack.mallocFloat(16));
             glUniformMatrix4fv(modelLocation2, false, buffer);
         }
 
-        int viewLocation2 = glGetUniformLocation(shaderProgram.id(), "view");
-        if (viewLocation2 == -1)
+        int viewProjectionLocation2 = glGetUniformLocation(shaderProgram, "viewProjection");
+        if (viewProjectionLocation2 == -1)
             throw new RuntimeException("Couldn't locate view uniform");
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer buffer =  view.get(stack.mallocFloat(16));
-            glUniformMatrix4fv(viewLocation2, false, buffer);
-        }
-
-        int projectionLocation2 = glGetUniformLocation(shaderProgram.id(), "projection");
-        if (projectionLocation2 == -1)
-            throw new RuntimeException("Couldn't locate projection uniform");
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer buffer =  projection.get(stack.mallocFloat(16));
-            glUniformMatrix4fv(projectionLocation2, false, buffer);
+            FloatBuffer buffer =  camera.matrix().get(stack.mallocFloat(16));
+            glUniformMatrix4fv(viewProjectionLocation2, false, buffer);
         }
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        glUseProgram(shaderProgram.id());
-        glBindVertexArray(vao.id());
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo.id());
+        glUseProgram(shaderProgram);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         glBindTexture(GL_TEXTURE_2D, texture1.id());
 
-        int modelLocation1 = glGetUniformLocation(shaderProgram.id(), "model");
+        int modelLocation1 = glGetUniformLocation(shaderProgram, "model");
         if (modelLocation1 == -1)
             throw new RuntimeException("Couldn't locate model uniform");
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer buffer =  model1.get(stack.mallocFloat(16));
+            FloatBuffer buffer =  transform1.matrix().get(stack.mallocFloat(16));
             glUniformMatrix4fv(modelLocation1, false, buffer);
         }
 
-        int viewLocation1 = glGetUniformLocation(shaderProgram.id(), "view");
-        if (viewLocation1 == -1)
-            throw new RuntimeException("Couldn't locate view uniform");
+        int viewProjectionLocation1 = glGetUniformLocation(shaderProgram, "viewProjection");
+        if (viewProjectionLocation1 == -1)
+            throw new RuntimeException("Couldn't locate viewProjection uniform");
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer buffer =  view.get(stack.mallocFloat(16));
-            glUniformMatrix4fv(viewLocation1, false, buffer);
-        }
-
-        int projectionLocation1 = glGetUniformLocation(shaderProgram.id(), "projection");
-        if (projectionLocation1 == -1)
-            throw new RuntimeException("Couldn't locate projection uniform");
-
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer buffer =  projection.get(stack.mallocFloat(16));
-            glUniformMatrix4fv(projectionLocation1, false, buffer);
+            FloatBuffer buffer =  camera.matrix().get(stack.mallocFloat(16));
+            glUniformMatrix4fv(viewProjectionLocation1, false, buffer);
         }
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -403,12 +343,12 @@ public class Game {
     }
 
     private void terminate() {
-        glDeleteVertexArrays(vao.id());
-        glDeleteBuffers(vbo.id());
-        glDeleteBuffers(ebo.id());
-        glDeleteTextures(texture1.id());
-        glDeleteTextures(texture2.id());
-        glDeleteProgram(shaderProgram.id());
+        glDeleteVertexArrays(vao);
+        glDeleteBuffers(vbo);
+        glDeleteBuffers(ebo);
+        texture1.delete();
+        texture2.delete();
+        glDeleteProgram(shaderProgram);
 
         glfwFreeCallbacks(window);
         glfwDestroyWindow(window);
