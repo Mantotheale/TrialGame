@@ -18,7 +18,7 @@ import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
 import static org.lwjgl.opengl.GL30.*;
 
-public class QuadArrayBuffer {
+class QuadArrayBuffer {
     private final int arrayId;
     private final int vertexBufferId;
     private final int indexBufferId;

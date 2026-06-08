@@ -26,7 +26,7 @@ public class WindowBuilder {
     private boolean isResizable = true;
     private boolean isDecorated = true;
     private boolean isFocused = true;
-    private boolean isCentered = false;
+    private boolean isCentered = true;
 
     public WindowBuilder setTitle(String title) {
         this.title = title;

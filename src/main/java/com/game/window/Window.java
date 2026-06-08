@@ -1,5 +1,7 @@
 package com.game.window;
 
+import org.lwjgl.glfw.*;
+
 import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -26,6 +28,30 @@ public class Window {
 
     public void swapBuffers() {
         glfwSwapBuffers(id);
+    }
+
+    public void setKeyCallback(GLFWKeyCallbackI cb) {
+        GLFWKeyCallback previousCb = glfwSetKeyCallback(id, cb);
+        if (previousCb != null)
+            previousCb.free();
+    }
+
+    public void setCursorPosCallback(GLFWCursorPosCallbackI cb) {
+        GLFWCursorPosCallback previousCb = glfwSetCursorPosCallback(id, cb);
+        if (previousCb != null)
+            previousCb.free();
+    }
+
+    public void setCloseCallback(GLFWWindowCloseCallbackI cb) {
+        GLFWWindowCloseCallback previousCb = glfwSetWindowCloseCallback(id, cb);
+        if (previousCb != null)
+            previousCb.free();
+    }
+
+    public void setFrameBufferSizeCallback(GLFWFramebufferSizeCallbackI cb) {
+        GLFWFramebufferSizeCallback previousCb = glfwSetFramebufferSizeCallback(id, cb);
+        if (previousCb != null)
+            previousCb.free();
     }
 
     public void delete() {

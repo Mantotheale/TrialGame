@@ -21,7 +21,8 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Game {
     private final static double ONE_SEC_TIME = 1;
-    private final static double UPDATE_TIME = 1d / 60;
+    private final static int UPDATES_PER_SECOND = 60;
+    private final static double UPDATE_TIME = 1d / UPDATES_PER_SECOND;
 
     private final Window window;
 
@@ -44,12 +45,21 @@ public class Game {
         renderer = new Renderer();
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
-        glfwSetKeyCallback(window.id(), (window, key, _, action, _) -> {
+        window.setKeyCallback((_, key, _, action, _) -> {
+            System.out.println("Key pressed: " + key + ", action: " + action);
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
                 escPressed = true;
         });
 
-        glfwSetFramebufferSizeCallback(window.id(), (_, width, height) -> renderer.setViewport(0, 0, width, height));
+        window.setCursorPosCallback(
+                (_, x, y) ->
+                        System.out.println("Cursor position: " + x + ", " + y)
+        );
+
+        window.setFrameBufferSizeCallback(
+                (_, width, height) ->
+                        renderer.setViewport(0, 0, width, height)
+        );
 
         TextureAttributes texAttr = new TextureAttributes.Builder()
                 .magnifyingFilter(TextureMagnifyingFilter.LINEAR)
@@ -73,6 +83,8 @@ public class Game {
 
         updates = 0;
         frames = 0;
+
+        glfwSetTime(0);
     }
 
     public void run() {
@@ -137,6 +149,8 @@ public class Game {
     private void oneSecUpdate() {
         System.out.println("UPS: " + updates);
         System.out.println("FPS: " + frames);
+        System.out.println("TIME: " + glfwGetTimerValue());
+        System.out.println("TIME FREQ: " + glfwGetTimerFrequency());
         updates = 0;
         frames = 0;
     }
