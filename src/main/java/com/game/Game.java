@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
+import com.game.input.*;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.TextureAttributes;
@@ -11,6 +12,7 @@ import com.game.transform.Rotation;
 import com.game.transform.Scale;
 import com.game.transform.Transform;
 import com.game.transform.Translation;
+import com.game.util.Observer;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
 
@@ -19,7 +21,7 @@ import java.nio.file.Path;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
-public class Game {
+public class Game implements Observer<Input> {
     private final static double ONE_SEC_TIME = 1;
     private final static int UPDATES_PER_SECOND = 60;
     private final static double UPDATE_TIME = 1d / UPDATES_PER_SECOND;
@@ -42,24 +44,10 @@ public class Game {
         System.out.println("My first game!");
 
         window = new WindowBuilder().setTitle("Hello World!").build();
+        window.addObserver(this);
+
         renderer = new Renderer();
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
-
-        window.setKeyCallback((_, key, _, action, _) -> {
-            System.out.println("Key pressed: " + key + ", action: " + action);
-            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
-                escPressed = true;
-        });
-
-        window.setCursorPosCallback(
-                (_, x, y) ->
-                        System.out.println("Cursor position: " + x + ", " + y)
-        );
-
-        window.setFrameBufferSizeCallback(
-                (_, width, height) ->
-                        renderer.setViewport(0, 0, width, height)
-        );
 
         TextureAttributes texAttr = new TextureAttributes.Builder()
                 .magnifyingFilter(TextureMagnifyingFilter.LINEAR)
@@ -83,8 +71,6 @@ public class Game {
 
         updates = 0;
         frames = 0;
-
-        glfwSetTime(0);
     }
 
     public void run() {
@@ -149,8 +135,6 @@ public class Game {
     private void oneSecUpdate() {
         System.out.println("UPS: " + updates);
         System.out.println("FPS: " + frames);
-        System.out.println("TIME: " + glfwGetTimerValue());
-        System.out.println("TIME FREQ: " + glfwGetTimerFrequency());
         updates = 0;
         frames = 0;
     }
@@ -168,6 +152,22 @@ public class Game {
 
     private boolean shouldClose() {
         return escPressed || window.shouldClose();
+    }
+
+    @Override
+    public void handle(Input value) {
+        switch (value) {
+            case KeyInput(PhysicalKey key, PhysicalAction action) -> {
+                System.out.println("Key pressed: " + key + ", action: " + action);
+                if (key == PhysicalKey.ESCAPE && action == PhysicalAction.RELEASE)
+                    escPressed = true;
+            }
+            case ResizeFrameBuffer(int width, int height) -> {
+                System.out.println("Frame buffer resized: (" + width + ", " + height + ")");
+                renderer.setViewport(0, 0, width, height);
+            }
+            case CloseWindow() -> System.out.println("Close window clicked");
+        }
     }
 
     private void terminate() {

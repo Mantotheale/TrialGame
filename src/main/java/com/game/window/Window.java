@@ -1,17 +1,29 @@
 package com.game.window;
 
-import org.lwjgl.glfw.*;
+import com.game.input.CloseWindow;
+import com.game.input.Input;
+import com.game.input.KeyInput;
+import com.game.input.ResizeFrameBuffer;
+import com.game.util.Observable;
+import com.game.util.Observer;
 
-import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Window {
+public class Window implements Observable<Input> {
     private final long id;
+    private final Set<Observer<Input>> observers;
 
     Window(long id) {
         this.id = id;
+        observers = new HashSet<>();
+
+        glfwSetKeyCallback(id, this::keyCallback);
+        glfwSetWindowCloseCallback(id, this::closeCallback);
+        glfwSetFramebufferSizeCallback(id, this::frameBufferSizeCallback);
     }
 
     public long id() {
@@ -30,35 +42,40 @@ public class Window {
         glfwSwapBuffers(id);
     }
 
-    public void setKeyCallback(GLFWKeyCallbackI cb) {
-        GLFWKeyCallback previousCb = glfwSetKeyCallback(id, cb);
-        if (previousCb != null)
-            previousCb.free();
-    }
-
-    public void setCursorPosCallback(GLFWCursorPosCallbackI cb) {
-        GLFWCursorPosCallback previousCb = glfwSetCursorPosCallback(id, cb);
-        if (previousCb != null)
-            previousCb.free();
-    }
-
-    public void setCloseCallback(GLFWWindowCloseCallbackI cb) {
-        GLFWWindowCloseCallback previousCb = glfwSetWindowCloseCallback(id, cb);
-        if (previousCb != null)
-            previousCb.free();
-    }
-
-    public void setFrameBufferSizeCallback(GLFWFramebufferSizeCallbackI cb) {
-        GLFWFramebufferSizeCallback previousCb = glfwSetFramebufferSizeCallback(id, cb);
-        if (previousCb != null)
-            previousCb.free();
-    }
-
     public void delete() {
+        observers.clear();
         glfwFreeCallbacks(id);
         glfwDestroyWindow(id);
 
         glfwTerminate();
-        Objects.requireNonNull(glfwSetErrorCallback(null)).free();
+        glfwSetErrorCallback(null).free();
+    }
+
+    @Override
+    public void addObserver(Observer<Input> observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer<Input> observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(Input value) {
+        for (Observer<Input> observer : observers)
+            observer.handle(value);
+    }
+
+    private void keyCallback(long _window, int key, int _scancode, int action, int _mods) {
+        notifyObservers(KeyInput.fromGlfw(key, action));
+    }
+
+    private void closeCallback(long _window) {
+        notifyObservers(CloseWindow.INSTANCE);
+    }
+
+    private void frameBufferSizeCallback(long _window, int width, int height) {
+        notifyObservers(new ResizeFrameBuffer(width, height));
     }
 }
