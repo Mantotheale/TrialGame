@@ -1,9 +1,13 @@
 package com.game.renderer;
 
 import com.game.camera.Camera;
+import com.game.input.Input;
+import com.game.input.ResizeFrameBuffer;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform;
+import com.game.util.Observer;
+import com.game.window.Window;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -14,7 +18,7 @@ import java.util.List;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
-public class Renderer {
+public class Renderer implements Observer<Input> {
     private static final int MAX_QUAD_COUNT = 10;
     private static final int MAX_TEXTURE_COUNT = 16;
 
@@ -23,7 +27,7 @@ public class Renderer {
     private final List<RenderCommand> pushedCommands;
     private Camera camera;
 
-    public Renderer() {
+    public Renderer(Window window) {
         pushedCommands = new ArrayList<>();
 
         float[] vertices = {
@@ -44,6 +48,8 @@ public class Renderer {
                 Path.of("src/main/resources/shaders/vertexshader.vert"),
                 Path.of("src/main/resources/shaders/fragmentshader.frag")
         );
+
+        window.addObserver(this);
     }
 
     public void beginScene(Camera camera) {
@@ -88,6 +94,12 @@ public class Renderer {
 
     public void setClearColor(float r, float g, float b, float a) {
         glClearColor(r, g, b, a);
+    }
+
+    @Override
+    public void handle(Input value) {
+        if (value instanceof ResizeFrameBuffer(int width, int height))
+            setViewport(0, 0, width, height);
     }
 
     private record RenderCommand(Transform transform, Texture texture) { }

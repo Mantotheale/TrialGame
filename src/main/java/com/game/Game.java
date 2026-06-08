@@ -27,15 +27,13 @@ public class Game implements Observer<Input> {
     private final static double UPDATE_TIME = 1d / UPDATES_PER_SECOND;
 
     private final Window window;
-
     private final Renderer renderer;
+    private final InputManager inputManager;
     private final Texture texture1;
     private final Texture texture2;
     private Transform transform1;
     private Transform transform2;
     private final Camera camera;
-
-    private boolean escPressed;
 
     private int updates;
     private int frames;
@@ -46,8 +44,10 @@ public class Game implements Observer<Input> {
         window = new WindowBuilder().setTitle("Hello World!").build();
         window.addObserver(this);
 
-        renderer = new Renderer();
+        renderer = new Renderer(window);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
+
+        inputManager = new InputManager(window);
 
         TextureAttributes texAttr = new TextureAttributes.Builder()
                 .magnifyingFilter(TextureMagnifyingFilter.LINEAR)
@@ -105,29 +105,29 @@ public class Game implements Observer<Input> {
     private void update() {
         updates++;
 
-        if (glfwGetKey(window.id(), GLFW_KEY_W) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN) {
             transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME, 0);
         }
-        if (glfwGetKey(window.id(), GLFW_KEY_S) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN) {
             transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME, 0);
         }
-        if (glfwGetKey(window.id(), GLFW_KEY_A) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN) {
             transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0, 0);
         }
-        if (glfwGetKey(window.id(), GLFW_KEY_D) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN) {
             transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0, 0);
         }
 
-        if (glfwGetKey(window.id(), GLFW_KEY_UP) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.UP) == KeyState.DOWN) {
             camera.move(new Translation(0, 2 * (float) UPDATE_TIME, 0));
         }
-        if (glfwGetKey(window.id(), GLFW_KEY_DOWN) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.DOWN) == KeyState.DOWN) {
             camera.move(new Translation(0, -2 * (float) UPDATE_TIME, 0));
         }
-        if (glfwGetKey(window.id(), GLFW_KEY_LEFT) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.LEFT) == KeyState.DOWN) {
             camera.move(new Translation(-2 * (float) UPDATE_TIME, 0, 0));
         }
-        if (glfwGetKey(window.id(), GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        if (inputManager.keyState(PhysicalKey.RIGHT) == KeyState.DOWN) {
             camera.move(new Translation(2 * (float) UPDATE_TIME, 0, 0));
         }
     }
@@ -151,22 +151,15 @@ public class Game implements Observer<Input> {
     }
 
     private boolean shouldClose() {
-        return escPressed || window.shouldClose();
+        return inputManager.keyState(PhysicalKey.ESCAPE) == KeyState.DOWN || window.shouldClose();
     }
 
     @Override
     public void handle(Input value) {
         switch (value) {
-            case KeyInput(PhysicalKey key, PhysicalAction action) -> {
-                System.out.println("Key pressed: " + key + ", action: " + action);
-                if (key == PhysicalKey.ESCAPE && action == PhysicalAction.RELEASE)
-                    escPressed = true;
-            }
-            case ResizeFrameBuffer(int width, int height) -> {
-                System.out.println("Frame buffer resized: (" + width + ", " + height + ")");
-                renderer.setViewport(0, 0, width, height);
-            }
+            case KeyInput(PhysicalKey key, PhysicalAction action) -> System.out.println("Key pressed: " + key + ", action: " + action);
             case CloseWindow() -> System.out.println("Close window clicked");
+            default -> { }
         }
     }
 
