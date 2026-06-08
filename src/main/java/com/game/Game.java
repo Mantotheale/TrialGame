@@ -3,6 +3,10 @@ package com.game;
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
 import com.game.input.*;
+import com.game.input.KeyInput;
+import com.game.input.rawcomponents.KeyState;
+import com.game.input.rawcomponents.PhysicalAction;
+import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.TextureAttributes;
@@ -28,7 +32,7 @@ public class Game implements Observer<Input> {
 
     private final Window window;
     private final Renderer renderer;
-    private final InputManager inputManager;
+    private final InputState inputState;
     private final Texture texture1;
     private final Texture texture2;
     private Transform transform1;
@@ -47,7 +51,7 @@ public class Game implements Observer<Input> {
         renderer = new Renderer(window);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
-        inputManager = new InputManager(window);
+        inputState = new InputState(window);
 
         TextureAttributes texAttr = new TextureAttributes.Builder()
                 .magnifyingFilter(TextureMagnifyingFilter.LINEAR)
@@ -105,29 +109,29 @@ public class Game implements Observer<Input> {
     private void update() {
         updates++;
 
-        if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.W) == KeyState.DOWN) {
             transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME, 0);
         }
-        if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.S) == KeyState.DOWN) {
             transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME, 0);
         }
-        if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.A) == KeyState.DOWN) {
             transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0, 0);
         }
-        if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.D) == KeyState.DOWN) {
             transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0, 0);
         }
 
-        if (inputManager.keyState(PhysicalKey.UP) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.UP) == KeyState.DOWN) {
             camera.move(new Translation(0, 2 * (float) UPDATE_TIME, 0));
         }
-        if (inputManager.keyState(PhysicalKey.DOWN) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.DOWN) == KeyState.DOWN) {
             camera.move(new Translation(0, -2 * (float) UPDATE_TIME, 0));
         }
-        if (inputManager.keyState(PhysicalKey.LEFT) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.LEFT) == KeyState.DOWN) {
             camera.move(new Translation(-2 * (float) UPDATE_TIME, 0, 0));
         }
-        if (inputManager.keyState(PhysicalKey.RIGHT) == KeyState.DOWN) {
+        if (inputState.keyState(PhysicalKey.RIGHT) == KeyState.DOWN) {
             camera.move(new Translation(2 * (float) UPDATE_TIME, 0, 0));
         }
     }
@@ -151,7 +155,7 @@ public class Game implements Observer<Input> {
     }
 
     private boolean shouldClose() {
-        return inputManager.keyState(PhysicalKey.ESCAPE) == KeyState.DOWN || window.shouldClose();
+        return inputState.keyState(PhysicalKey.ESCAPE) == KeyState.DOWN || window.shouldClose();
     }
 
     @Override

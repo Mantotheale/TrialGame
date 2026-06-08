@@ -1,4 +1,4 @@
-package com.game.input;
+package com.game.input.rawcomponents;
 
 import static org.lwjgl.glfw.GLFW.*;
 

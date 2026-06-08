@@ -1,4 +1,4 @@
-package com.game.input;
+package com.game.input.rawcomponents;
 
 public enum KeyState {
     UP,
