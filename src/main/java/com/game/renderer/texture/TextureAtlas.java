@@ -1,7 +1,9 @@
 package com.game.renderer.texture;
 
 import com.game.util.IOUtils;
+import com.game.util.Vec2i;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,37 +32,45 @@ public class TextureAtlas {
 
     private static Optional<BufferedImage> packImages(List<TileImagePair> pairedTiles, int size) {
         BufferedImage atlas = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = atlas.createGraphics();
+
         int pointerX = 0;
         int pointerY = 0;
-        int nextY = 0;
+        List<Vec2i> rowCheckpoints = new ArrayList<>();
 
         for (TileImagePair tileImage : pairedTiles) {
             BufferedImage image = tileImage.image;
             int width = image.getWidth();
             int height = image.getHeight();
 
-            if (size - pointerX < width || size - pointerY < height) {
-                pointerX = 0;
-                pointerY = nextY;
 
-                if (size - pointerX < width || size - pointerY < height) {
+            while((!rowCheckpoints.isEmpty() && rowCheckpoints.getLast().y() - pointerY < height) ||  size - pointerX < width || size - pointerY < height) {
+                if (rowCheckpoints.isEmpty()) {
+                    g.dispose();
                     return Optional.empty();
                 }
-            }
 
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < height; j++) {
-                    atlas.setRGB(pointerX + i, pointerY + j, image.getRGB(i, j));
+                Vec2i checkpoint = rowCheckpoints.removeLast();
+                pointerY = checkpoint.y();
+
+                if (rowCheckpoints.isEmpty()) {
+                    pointerX = 0;
+                } else  {
+                    pointerX = rowCheckpoints.getLast().x();
                 }
             }
 
-            if (pointerY + height > nextY) {
-                nextY = pointerY + height;
+            g.drawImage(image, pointerX, pointerY, null);
+
+            if (!rowCheckpoints.isEmpty() && rowCheckpoints.getLast().y() == pointerY) {
+                rowCheckpoints.removeLast();
             }
 
             pointerX += width;
+            rowCheckpoints.add(new Vec2i(pointerX, pointerY + height));
         }
 
+        g.dispose();
         return Optional.of(atlas);
     }
 
