@@ -61,7 +61,7 @@ public class Game implements Observer<Input> {
     private int frames;
 
     public Game() {
-        TextureAtlas atlas = new TextureAtlas(List.of(Tile.RESHIRAM, Tile.LAKE_FULL, Tile.BROKEN_WALL, Tile.LAKE_TOP, Tile.WATER, Tile.GRASS, Tile.LAKE_TOP_RIGHT, Tile.LAKE_TOP_RIGHT, Tile.LAKE_RIGHT, Tile.LAKE_LEFT, Tile.WALLED_WATER_SOURCE));
+        AtlasGenerator.generateAtlases(List.of(Tile.values()));
 
         System.out.println("My first game!");
 
