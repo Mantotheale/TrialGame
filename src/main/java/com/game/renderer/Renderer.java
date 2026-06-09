@@ -4,7 +4,7 @@ import com.game.camera.Camera;
 import com.game.input.Input;
 import com.game.input.ResizeFrameBuffer;
 import com.game.renderer.shader.ShaderProgram;
-import com.game.renderer.texture.Texture;
+import com.game.renderer.texture.SimpleTexture;
 import com.game.transform.Transform;
 import com.game.util.Observer;
 import com.game.window.Window;
@@ -19,8 +19,10 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
 public class Renderer implements Observer<Input> {
-    private static final int MAX_QUAD_COUNT = 10;
-    private static final int MAX_TEXTURE_COUNT = 16;
+    private static final int MAX_QUAD_COUNT = 1000;
+    private static final int MAX_TEXTURE_COUNT = 100;
+
+    private static final int TEXTURE_UNITS = 8;
 
     private final QuadArrayBuffer quadArrayBuffer;
     private final ShaderProgram shaderProgram;
@@ -56,11 +58,11 @@ public class Renderer implements Observer<Input> {
         this.camera = camera;
     }
 
-    public void submit(Transform transform, Texture texture) {
+    public void submit(Transform transform, SimpleTexture simpleTexture) {
         if (pushedCommands.size() >= MAX_QUAD_COUNT)
             throw new IllegalStateException("Too many pushed commands");
 
-        pushedCommands.add(new RenderCommand(transform, texture));
+        pushedCommands.add(new RenderCommand(transform, simpleTexture));
     }
 
     public void endScene() {
@@ -72,7 +74,7 @@ public class Renderer implements Observer<Input> {
 
         for (RenderCommand command : pushedCommands) {
             glBindVertexArray(quadArrayBuffer.id());
-            glBindTexture(GL_TEXTURE_2D, command.texture.id());
+            glBindTexture(GL_TEXTURE_2D, command.simpleTexture.id());
 
             shaderProgram.setMatrix4f("model", command.transform.matrix());
 
@@ -102,5 +104,5 @@ public class Renderer implements Observer<Input> {
             setViewport(0, 0, width, height);
     }
 
-    private record RenderCommand(Transform transform, Texture texture) { }
+    private record RenderCommand(Transform transform, SimpleTexture simpleTexture) { }
 }

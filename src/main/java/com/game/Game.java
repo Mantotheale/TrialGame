@@ -8,10 +8,7 @@ import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalAction;
 import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
-import com.game.renderer.texture.Texture;
-import com.game.renderer.texture.TextureAttributes;
-import com.game.renderer.texture.TextureMagnifyingFilter;
-import com.game.renderer.texture.TextureMinifyingFilter;
+import com.game.renderer.texture.*;
 import com.game.transform.Rotation;
 import com.game.transform.Scale;
 import com.game.transform.Transform;
@@ -33,10 +30,30 @@ public class Game implements Observer<Input> {
     private final Window window;
     private final Renderer renderer;
     private final InputState inputState;
-    private final Texture texture1;
-    private final Texture texture2;
+    private final SimpleTexture reshiramTexture;
+    private final SimpleTexture lowGrassTexture;
+    private final SimpleTexture lakeBottomTexture;
+    private final SimpleTexture lakeBottomRightTexture;
+    private final SimpleTexture lakeRightTexture;
+    private final SimpleTexture lakeTopRightTexture;
+    private final SimpleTexture lakeTopTexture;
+    private final SimpleTexture lakeTopLeftTexture;
+    private final SimpleTexture lakeLeftTexture;
+    private final SimpleTexture lakeBottomLeftTexture;
+    private final SimpleTexture waterTexture;
+
     private Transform transform1;
-    private Transform transform2;
+    private final Transform[] lowGrassTransforms;
+    private final Transform lakeBottomTransform;
+    private final Transform lakeBottomRightTransform;
+    private final Transform lakeRightTransform;
+    private final Transform lakeTopRightTransform;
+    private final Transform lakeTopTransform;
+    private final Transform lakeTopLeftTransform;
+    private final Transform lakeLeftTransform;
+    private final Transform lakeBottomLeftTransform;
+    private final Transform waterTransform;
+
     private final Camera camera;
 
     private int updates;
@@ -48,19 +65,32 @@ public class Game implements Observer<Input> {
         window = new WindowBuilder().setTitle("Hello World!").build();
         window.addObserver(this);
 
+        window.setVsync(false);
+
+        System.out.println("Max texture size " + glGetInteger(GL_MAX_TEXTURE_SIZE));
+
         renderer = new Renderer(window);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
         inputState = new InputState(window);
 
         TextureAttributes texAttr = new TextureAttributes.Builder()
-                .magnifyingFilter(TextureMagnifyingFilter.LINEAR)
-                .minifyingFilter(TextureMinifyingFilter.LINEAR_MIPMAP_LINEAR)
+                .magnifyingFilter(TextureMagnifyingFilter.NEAREST)
+                .minifyingFilter(TextureMinifyingFilter.NEAREST_MIPMAP_NEAREST)
                 .mipmap(true)
                 .build();
 
-        texture1 = new Texture(texAttr, Path.of("src/main/resources/images/reshiram.png"));
-        texture2 = new Texture(texAttr, Path.of("src/main/resources/images/background.png"));
+        reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/reshiram.png"));
+        lowGrassTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/grass.png"));
+        lakeBottomTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_bottom.png"));
+        lakeBottomRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_bottom_right.png"));
+        lakeRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_right.png"));
+        lakeTopRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_top_right.png"));
+        lakeTopTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_top.png"));
+        lakeTopLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_top_left.png"));
+        lakeLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_left.png"));
+        lakeBottomLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_bottom_left.png"));
+        waterTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/water.png"));
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -71,7 +101,23 @@ public class Game implements Observer<Input> {
         );
 
         transform1 = new Transform(new Translation(0, 0, 1), new Rotation(), new Scale());
-        transform2 = new Transform(new Translation(), new Rotation(), new Scale(10));
+        lowGrassTransforms = new Transform[11 * 11];
+        int idx = 0;
+        for (int i = -5; i <= 5; i++) {
+            for (int j = -5; j <= 5; j++) {
+                lowGrassTransforms[idx] = new Transform(new Translation(i, j, 0), new Rotation(), new Scale());
+                idx++;
+            }
+        }
+        lakeBottomTransform = new Transform(new Translation(0, -1, 0), new Rotation(), new Scale());
+        lakeBottomRightTransform = new Transform(new Translation(1, -1, 0), new Rotation(), new Scale());
+        lakeRightTransform = new Transform(new Translation(1, 0, 0), new Rotation(), new Scale());
+        lakeTopRightTransform = new Transform(new Translation(1, 1, 0), new Rotation(), new Scale());
+        lakeTopTransform = new Transform(new Translation(0, 1, 0), new Rotation(), new Scale());
+        lakeTopLeftTransform = new Transform(new Translation(-1, 1, 0), new Rotation(), new Scale());
+        lakeLeftTransform = new Transform(new Translation(-1, 0, 0), new Rotation(), new Scale());
+        lakeBottomLeftTransform = new Transform(new Translation(-1, -1, 0), new Rotation(), new Scale());
+        waterTransform = new Transform(new Translation(0, 0, 0), new Rotation(), new Scale());
 
         updates = 0;
         frames = 0;
@@ -147,8 +193,20 @@ public class Game implements Observer<Input> {
         frames++;
 
         renderer.beginScene(camera);
-        renderer.submit(transform2, texture2);
-        renderer.submit(transform1, texture1);
+        for (Transform transform : lowGrassTransforms) {
+            renderer.submit(transform, lowGrassTexture);
+        }
+        renderer.submit(lakeBottomTransform, lakeBottomTexture);
+        renderer.submit(lakeBottomRightTransform, lakeBottomRightTexture);
+        renderer.submit(lakeRightTransform, lakeRightTexture);
+        renderer.submit(lakeTopRightTransform, lakeTopRightTexture);
+        renderer.submit(lakeTopTransform, lakeTopTexture);
+        renderer.submit(lakeTopLeftTransform, lakeTopLeftTexture);
+        renderer.submit(lakeLeftTransform, lakeLeftTexture);
+        renderer.submit(lakeBottomLeftTransform, lakeBottomLeftTexture);
+        renderer.submit(waterTransform, waterTexture);
+
+        renderer.submit(transform1, reshiramTexture);
         renderer.endScene();
 
         window.swapBuffers();
@@ -168,8 +226,17 @@ public class Game implements Observer<Input> {
     }
 
     private void terminate() {
-        texture1.delete();
-        texture2.delete();
+        reshiramTexture.delete();
+        lowGrassTexture.delete();
+        lakeBottomTexture.delete();
+        lakeBottomRightTexture.delete();
+        lakeRightTexture.delete();
+        lakeTopRightTexture.delete();
+        lakeTopTexture.delete();
+        lakeTopLeftTexture.delete();
+        lakeLeftTexture.delete();
+        lakeBottomLeftTexture.delete();
+        waterTexture.delete();
         renderer.delete();
         window.delete();
     }

@@ -34,8 +34,8 @@ public class Window implements Observable<Input> {
         return glfwWindowShouldClose(id);
     }
 
-    public void setSwapInterval(int interval) {
-        glfwSwapInterval(interval);
+    public void setVsync(boolean vsync) {
+        glfwSwapInterval(vsync ? 1 : 0);
     }
 
     public void swapBuffers() {
