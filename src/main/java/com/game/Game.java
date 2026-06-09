@@ -18,6 +18,7 @@ import com.game.window.Window;
 import com.game.window.WindowBuilder;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -60,6 +61,8 @@ public class Game implements Observer<Input> {
     private int frames;
 
     public Game() {
+        TextureAtlas atlas = new TextureAtlas(List.of(Tile.RESHIRAM, Tile.GRASS, Tile.WATER, Tile.LAKE_BOTTOM, Tile.LAKE_TOP, Tile.LAKE_BOTTOM_LEFT, Tile.LAKE_FULL));
+
         System.out.println("My first game!");
 
         window = new WindowBuilder().setTitle("Hello World!").build();
@@ -80,17 +83,17 @@ public class Game implements Observer<Input> {
                 .mipmap(true)
                 .build();
 
-        reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/reshiram.png"));
-        lowGrassTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/grass.png"));
-        lakeBottomTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_bottom.png"));
-        lakeBottomRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_bottom_right.png"));
-        lakeRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_right.png"));
-        lakeTopRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_top_right.png"));
-        lakeTopTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_top.png"));
-        lakeTopLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_top_left.png"));
-        lakeLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_left.png"));
-        lakeBottomLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/lake_bottom_left.png"));
-        waterTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/images/water.png"));
+        reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/reshiram.png"));
+        lowGrassTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/grass.png"));
+        lakeBottomTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom.png"));
+        lakeBottomRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom_right.png"));
+        lakeRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_right.png"));
+        lakeTopRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_top_right.png"));
+        lakeTopTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_top.png"));
+        lakeTopLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_top_left.png"));
+        lakeLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_left.png"));
+        lakeBottomLeftTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom_left.png"));
+        waterTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/water.png"));
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
