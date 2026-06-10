@@ -25,6 +25,7 @@ public class AtlasLoader {
         if (!isIntegrityPreserved()) return Optional.empty();
 
         List<List<TileMetadata>> metadata = loadMetadata();
+        List<BufferedImage> images = loadImages(metadata.size());
 
         List<ImageAndMetadata> imageAndMetadata = new ArrayList<>();
         for (int i = 0; i < metadata.size(); i++) {
@@ -49,8 +50,6 @@ public class AtlasLoader {
                 .sorted()
                 .map(IOUtils::readAllBites);
         return HashingUtils.hash(filesBytes);
-    }
-
     }
 
     private List<List<TileMetadata>> loadMetadata() {
@@ -79,5 +78,12 @@ public class AtlasLoader {
         }
 
         return metadata;
+    }
+
+    private List<BufferedImage> loadImages(int imagesCount) {
+        List<BufferedImage> images = new ArrayList<>();
+        for (int i = 1; i <= imagesCount; i++)
+            images.add(IOUtils.loadImage(atlasDirectory.resolve("atlas_" + i + ".png")));
+        return images;
     }
 }
