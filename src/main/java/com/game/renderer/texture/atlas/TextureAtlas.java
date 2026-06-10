@@ -1,5 +1,6 @@
-package com.game.renderer.texture;
+package com.game.renderer.texture.atlas;
 
+import com.game.renderer.texture.Tile;
 import com.game.util.IOUtils;
 import com.game.util.Vec2i;
 

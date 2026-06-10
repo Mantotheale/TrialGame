@@ -68,10 +68,11 @@ public class Game implements Observer<Input> {
         AtlasLoader atlasLoader = new AtlasLoader(atlasPath);
         AtlasGenerator atlasGenerator = new AtlasGenerator(atlasPath, 1024);
 
-        var atlases = atlasLoader.loadAtlases();
+        List<Tile> requestedTiles = List.of(Tile.RESHIRAM, Tile.LAKE_FULL);
+        var atlases = atlasLoader.loadAtlases(requestedTiles);
         if (atlases.isEmpty()) {
             System.out.println("Unable to load atlases");
-            atlasGenerator.generateAtlases(List.of(Tile.values()));
+            atlasGenerator.generateAtlases(requestedTiles);
             System.out.println("Successfully generated atlases");
         } else {
             System.out.println("Successfully loaded atlases");

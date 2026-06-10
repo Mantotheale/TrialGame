@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class AtlasLoader {
@@ -21,10 +22,12 @@ public class AtlasLoader {
         this.metadataPath = atlasDirectory.resolve(AtlasGenerator.ATLASES_METADATA_FILE);
     }
 
-    public Optional<List<ImageAndMetadata>> loadAtlases() {
+    public Optional<List<ImageAndMetadata>> loadAtlases(List<Tile> tiles) {
         if (!isIntegrityPreserved()) return Optional.empty();
 
         List<List<TileMetadata>> metadata = loadMetadata();
+        if (!metadataMatchesRequestedTiles(metadata, tiles)) return Optional.empty();
+
         List<BufferedImage> images = loadImages(metadata.size());
 
         List<ImageAndMetadata> imageAndMetadata = new ArrayList<>();
@@ -78,6 +81,17 @@ public class AtlasLoader {
         }
 
         return metadata;
+    }
+
+    private boolean metadataMatchesRequestedTiles(List<List<TileMetadata>> metadata, List<Tile> tiles) {
+        Set<Tile> storedTiles = metadata.stream()
+                .flatMap(List::stream)
+                .map(TileMetadata::tile)
+                .collect(Collectors.toSet());
+
+        Set<Tile> requestedTiles = new HashSet<>(tiles);
+
+        return storedTiles.equals(requestedTiles);
     }
 
     private List<BufferedImage> loadImages(int imagesCount) {
