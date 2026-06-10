@@ -1,6 +1,7 @@
 package com.game.transform;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public record Transform(Translation translation, Rotation rotation, Scale scale) {
     public Transform() {
@@ -21,5 +22,9 @@ public record Transform(Translation translation, Rotation rotation, Scale scale)
         Matrix4f s = scale.matrix();
 
         return t.mulAffine(r).mulAffine(s);
+    }
+
+    public Vector3f transformMut(Vector3f vec) {
+        return translation.transformMut(rotation.transformMut(scale.transformMut(vec)));
     }
 }

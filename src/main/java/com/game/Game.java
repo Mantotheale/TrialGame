@@ -69,7 +69,7 @@ public class Game implements Observer<Input> {
         AtlasLoader atlasLoader = new AtlasLoader(atlasPath);
         AtlasGenerator atlasGenerator = new AtlasGenerator(atlasPath, 1024);
 
-        List<Tile> requestedTiles = List.of(Tile.RESHIRAM, Tile.LAKE_FULL);
+        List<Tile> requestedTiles = List.of(Tile.values());
         var atlases = atlasLoader.loadAtlases(requestedTiles);
         if (atlases.isEmpty()) {
             System.out.println("Unable to load atlases");
@@ -125,7 +125,7 @@ public class Game implements Observer<Input> {
                 new Transform(new Translation(0, 0, 20), Rotation.fromDirection(Rotation.WORLD_FRONT), new Scale())
         );
 
-        transform1 = new Transform(new Translation(0, 0, 1), new Rotation(), new Scale());
+        transform1 = new Transform(new Translation(0, 0, 2), new Rotation(), new Scale());
         lowGrassTransforms = new Transform[11 * 11];
         int idx = 0;
         for (int i = -5; i <= 5; i++) {
@@ -134,14 +134,14 @@ public class Game implements Observer<Input> {
                 idx++;
             }
         }
-        lakeBottomTransform = new Transform(new Translation(0, -1, 0), new Rotation(), new Scale());
-        lakeBottomRightTransform = new Transform(new Translation(1, -1, 0), new Rotation(), new Scale());
-        lakeRightTransform = new Transform(new Translation(1, 0, 0), new Rotation(), new Scale());
-        lakeTopRightTransform = new Transform(new Translation(1, 1, 0), new Rotation(), new Scale());
-        lakeTopTransform = new Transform(new Translation(0, 1, 0), new Rotation(), new Scale());
-        lakeTopLeftTransform = new Transform(new Translation(-1, 1, 0), new Rotation(), new Scale());
-        lakeLeftTransform = new Transform(new Translation(-1, 0, 0), new Rotation(), new Scale());
-        lakeBottomLeftTransform = new Transform(new Translation(-1, -1, 0), new Rotation(), new Scale());
+        lakeBottomTransform = new Transform(new Translation(0, -1, 1), new Rotation(), new Scale());
+        lakeBottomRightTransform = new Transform(new Translation(1, -1, 1), new Rotation(), new Scale());
+        lakeRightTransform = new Transform(new Translation(1, 0, 1), new Rotation(), new Scale());
+        lakeTopRightTransform = new Transform(new Translation(1, 1, 1), new Rotation(), new Scale());
+        lakeTopTransform = new Transform(new Translation(0, 1, 1), new Rotation(), new Scale());
+        lakeTopLeftTransform = new Transform(new Translation(-1, 1, 1), new Rotation(), new Scale());
+        lakeLeftTransform = new Transform(new Translation(-1, 0, 1), new Rotation(), new Scale());
+        lakeBottomLeftTransform = new Transform(new Translation(-1, -1, 1), new Rotation(), new Scale());
         waterTransform = new Transform(new Translation(0, 0, 0), new Rotation(), new Scale());
 
         updates = 0;

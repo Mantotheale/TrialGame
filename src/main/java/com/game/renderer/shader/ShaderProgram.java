@@ -49,6 +49,14 @@ public class ShaderProgram {
         }
     }
 
+    public void setInt(String name, int value) {
+        int location = glGetUniformLocation(id, name);
+        if (location == -1)
+            throw new RuntimeException("Couldn't locate uniform with name " + name);
+
+        glUniform1i(location, value);
+    }
+
     public void delete() {
         glDeleteProgram(id);
     }

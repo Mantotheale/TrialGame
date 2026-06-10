@@ -33,6 +33,10 @@ public record Rotation(float x, float y, float z, float w) {
         return new Matrix4f().rotation(refreshWorkingMemory());
     }
 
+    public Vector3f transformMut(Vector3f vec) {
+        return refreshWorkingMemory().transform(vec);
+    }
+
     public static Rotation fromDirection(Vector3fc dir) {
         return fromDirection(dir.x(), dir.y(), dir.z());
     }

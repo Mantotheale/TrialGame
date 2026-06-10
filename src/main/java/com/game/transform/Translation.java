@@ -5,6 +5,8 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 public record Translation(float x, float y, float z) {
+    private final static Matrix4f WORKING_MEMORY = new Matrix4f();
+
     public Translation() {
         this(0,0,0);
     }
@@ -31,5 +33,13 @@ public record Translation(float x, float y, float z) {
 
     public Matrix4f matrix() {
         return new Matrix4f().setTranslation(x, y, z);
+    }
+
+    public Vector3f transformMut(Vector3f vec) {
+        return refreshWorkingMemory().transformPosition(vec);
+    }
+
+    private Matrix4f refreshWorkingMemory() {
+        return WORKING_MEMORY.translation(x, y, z);
     }
 }
