@@ -1,5 +1,6 @@
 package com.game.renderer.texture;
 
+import com.game.util.Vec2f;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -19,8 +20,11 @@ import static org.lwjgl.opengl.GL11.glTexParameteri;
 import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 import static org.lwjgl.stb.STBImage.*;
 
-public class SimpleTexture {
+public class SimpleTexture implements Texture {
     private final int id;
+    private final int width;
+    private final int height;
+    private final Vec2f bottomLeft;
 
     public SimpleTexture(TextureAttributes attributes, Path path) {
         this.id = glGenTextures();
@@ -42,17 +46,49 @@ public class SimpleTexture {
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
             stbi_image_free(image);
+
+            this.width = width.get(0);
+            this.height = height.get(0);
         }
 
         if (attributes.mipmap)
             glGenerateMipmap(GL_TEXTURE_2D);
+
+        this.bottomLeft = new Vec2f(0, 0);
     }
 
-    public int id() {
+    @Override
+    public int texId() {
         return id;
     }
 
+    @Override
     public void delete() {
         glDeleteTextures(id);
+    }
+
+    @Override
+    public int bitWidth() {
+        return width;
+    }
+
+    @Override
+    public int bitHeight() {
+        return height;
+    }
+
+    @Override
+    public float normalizedWidth() {
+        return 1;
+    }
+
+    @Override
+    public float normalizedHeight() {
+        return 1;
+    }
+
+    @Override
+    public Vec2f bottomLeftCorner() {
+        return bottomLeft;
     }
 }

@@ -11,7 +11,8 @@ import com.game.renderer.Renderer;
 import com.game.renderer.texture.*;
 import com.game.renderer.texture.atlas.AtlasGenerator;
 import com.game.renderer.texture.atlas.AtlasLoader;
-import com.game.renderer.texture.atlas.ImageAndMetadata;
+import com.game.renderer.texture.atlas.PathAndMetadata;
+import com.game.renderer.texture.atlas.TextureAtlas;
 import com.game.transform.Rotation;
 import com.game.transform.Scale;
 import com.game.transform.Transform;
@@ -34,7 +35,7 @@ public class Game implements Observer<Input> {
     private final Window window;
     private final Renderer renderer;
     private final InputState inputState;
-    private final SimpleTexture reshiramTexture;
+    private final Texture reshiramTexture;
     private final SimpleTexture lowGrassTexture;
     private final SimpleTexture lakeBottomTexture;
     private final SimpleTexture lakeBottomRightTexture;
@@ -76,7 +77,7 @@ public class Game implements Observer<Input> {
             System.out.println("Successfully generated atlases");
         } else {
             System.out.println("Successfully loaded atlases");
-            System.out.println(atlases.get().stream().map(ImageAndMetadata::tileMetadata).toList());
+            System.out.println(atlases.get().stream().map(PathAndMetadata::tilesMetadata).toList());
         }
 
 
@@ -100,7 +101,11 @@ public class Game implements Observer<Input> {
                 .mipmap(true)
                 .build();
 
-        reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/reshiram.png"));
+        //reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/reshiram.png"));
+        PathAndMetadata reshiramPathMetadata = atlasLoader.loadAtlases(requestedTiles).get().getFirst();
+        TextureAtlas atlas = new TextureAtlas(texAttr, reshiramPathMetadata.path(), reshiramPathMetadata.tilesMetadata());
+        reshiramTexture = atlas.getFromTile(Tile.RESHIRAM);
+        //reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/reshiram.png"));
         lowGrassTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/grass.png"));
         lakeBottomTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom.png"));
         lakeBottomRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom_right.png"));

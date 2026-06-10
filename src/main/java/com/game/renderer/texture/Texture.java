@@ -3,10 +3,11 @@ package com.game.renderer.texture;
 import com.game.util.Vec2f;
 
 public interface Texture {
-    int id();
+    int texId();
     int bitWidth();
     int bitHeight();
     float normalizedWidth();
     float normalizedHeight();
-    Vec2f leftBottomCorner();
+    Vec2f bottomLeftCorner();
+    void delete();
 }

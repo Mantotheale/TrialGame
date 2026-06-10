@@ -1,92 +1,85 @@
 package com.game.renderer.texture.atlas;
 
+import com.game.renderer.texture.SimpleTexture;
+import com.game.renderer.texture.Texture;
+import com.game.renderer.texture.TextureAttributes;
 import com.game.renderer.texture.Tile;
-import com.game.util.IOUtils;
-import com.game.util.Vec2i;
+import com.game.util.Vec2f;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Optional;
 
-public class TextureAtlas {
-    public TextureAtlas(List<Tile> tiles) {
-        List<TileImagePair> pairedTiles = openImages(tiles);
-        pairedTiles.sort(TextureAtlas::compareTiles);
+public class TextureAtlas implements Texture {
+    private final SimpleTexture innerTexture;
+    private final EnumMap<Tile, Texture> subTextures;
 
-        int atlasSize = 16;
+    public TextureAtlas(TextureAttributes attributes, Path path, List<TileMetadata> tilesMetadata) {
+        innerTexture = new SimpleTexture(attributes, path);
+        System.out.println(path);
 
-        while (atlasSize <= 1024) {
-            Optional<BufferedImage> atlas = packImages(pairedTiles, atlasSize);
-
-            if (atlas.isPresent()) {
-                System.out.println("Managed to create the atlas with size " + atlasSize);
-                IOUtils.saveImage(Path.of("src/main/resources/atlases/atlas.png"), atlas.get());
-                return;
-            }
-
-            atlasSize *= 2;
-        }
+        subTextures = new EnumMap<>(Tile.class);
+        tilesMetadata.forEach(
+                m -> subTextures.put(
+                        m.tile(),
+                        new AtlasSubTexture(
+                                innerTexture.texId(),
+                                m.width(),
+                                m.height(),
+                                (float) m.width() / innerTexture.bitWidth(),
+                                (float) m.height() / innerTexture.bitHeight(),
+                                new Vec2f((float) m.cornerX() / innerTexture.bitWidth(), (float) m.cornerY() / innerTexture.bitHeight())
+                        )
+                )
+        );
+        System.out.println(subTextures);
     }
 
-    private static Optional<BufferedImage> packImages(List<TileImagePair> pairedTiles, int size) {
-        BufferedImage atlas = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = atlas.createGraphics();
-
-        int pointerX = 0;
-        int pointerY = 0;
-        List<Vec2i> rowCheckpoints = new ArrayList<>();
-
-        for (TileImagePair tileImage : pairedTiles) {
-            BufferedImage image = tileImage.image;
-            int width = image.getWidth();
-            int height = image.getHeight();
-
-
-            while((!rowCheckpoints.isEmpty() && rowCheckpoints.getLast().y() - pointerY < height) ||  size - pointerX < width || size - pointerY < height) {
-                if (rowCheckpoints.isEmpty()) {
-                    g.dispose();
-                    return Optional.empty();
-                }
-
-                Vec2i checkpoint = rowCheckpoints.removeLast();
-                pointerY = checkpoint.y();
-
-                if (rowCheckpoints.isEmpty()) {
-                    pointerX = 0;
-                } else  {
-                    pointerX = rowCheckpoints.getLast().x();
-                }
-            }
-
-            g.drawImage(image, pointerX, pointerY, null);
-
-            if (!rowCheckpoints.isEmpty() && rowCheckpoints.getLast().y() == pointerY) {
-                rowCheckpoints.removeLast();
-            }
-
-            pointerX += width;
-            rowCheckpoints.add(new Vec2i(pointerX, pointerY + height));
-        }
-
-        g.dispose();
-        return Optional.of(atlas);
+    public boolean isTileContained(Tile tile) {
+        return subTextures.containsKey(tile);
     }
 
-    private static List<TileImagePair> openImages(List<Tile> tiles) {
-        List<TileImagePair> pairs = new ArrayList<>();
-        for (Tile tile : tiles)
-                pairs.add(new TileImagePair(tile, IOUtils.loadImage(tile.path())));
-        return pairs;
+    public Texture getFromTile(Tile tile) {
+        return subTextures.get(tile);
     }
 
-    private static int compareTiles(TileImagePair a, TileImagePair b) {
-        int heightComparison = Integer.compare(b.image.getHeight(), a.image.getHeight());
-        if (heightComparison != 0) return heightComparison;
-        return Integer.compare(b.image.getWidth(), a.image.getWidth());
+    @Override
+    public int texId() {
+        return innerTexture.texId();
     }
 
-    private record TileImagePair(Tile tile, BufferedImage image) { }
+    @Override
+    public int bitWidth() {
+        return innerTexture.bitWidth();
+    }
+
+    @Override
+    public int bitHeight() {
+        return innerTexture.bitHeight();
+    }
+
+    @Override
+    public float normalizedWidth() {
+        return innerTexture.normalizedWidth();
+    }
+
+    @Override
+    public float normalizedHeight() {
+        return innerTexture.normalizedHeight();
+    }
+
+    @Override
+    public Vec2f bottomLeftCorner() {
+        return innerTexture.bottomLeftCorner();
+    }
+
+    @Override
+    public void delete() {
+        innerTexture.delete();
+    }
+
+    private record AtlasSubTexture(int texId, int bitWidth, int bitHeight, float normalizedWidth, float normalizedHeight, Vec2f bottomLeftCorner) implements Texture {
+        @Override
+        public void delete() { }
+    }
 }

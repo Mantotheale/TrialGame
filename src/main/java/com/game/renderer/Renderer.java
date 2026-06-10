@@ -4,7 +4,7 @@ import com.game.camera.Camera;
 import com.game.input.Input;
 import com.game.input.ResizeFrameBuffer;
 import com.game.renderer.shader.ShaderProgram;
-import com.game.renderer.texture.SimpleTexture;
+import com.game.renderer.texture.Texture;
 import com.game.transform.Transform;
 import com.game.util.Observer;
 import com.game.window.Window;
@@ -58,7 +58,7 @@ public class Renderer implements Observer<Input> {
         this.camera = camera;
     }
 
-    public void submit(Transform transform, SimpleTexture simpleTexture) {
+    public void submit(Transform transform, Texture simpleTexture) {
         if (pushedCommands.size() >= MAX_QUAD_COUNT)
             throw new IllegalStateException("Too many pushed commands");
 
@@ -74,7 +74,21 @@ public class Renderer implements Observer<Input> {
 
         for (RenderCommand command : pushedCommands) {
             glBindVertexArray(quadArrayBuffer.id());
-            glBindTexture(GL_TEXTURE_2D, command.simpleTexture.id());
+
+            Texture tex = command.simpleTexture;
+            float[] vertices = {
+                    -0.5f, -0.5f, 0, tex.bottomLeftCorner().x(), tex.bottomLeftCorner().y(),
+                    0.5f, -0.5f, 0, tex.bottomLeftCorner().x() + tex.normalizedWidth(), tex.bottomLeftCorner().y(),
+                    0.5f, 0.5f, 0, tex.bottomLeftCorner().x() + tex.normalizedWidth(), tex.bottomLeftCorner().y() + tex.normalizedHeight(),
+                    -0.5f, 0.5f, 0, tex.bottomLeftCorner().x(), tex.bottomLeftCorner().y() + tex.normalizedHeight()
+            };
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                FloatBuffer verticesBuffer = stack.mallocFloat(vertices.length);
+                verticesBuffer.put(vertices).flip();
+                quadArrayBuffer.setData(verticesBuffer);
+            }
+
+            glBindTexture(GL_TEXTURE_2D, command.simpleTexture.texId());
 
             shaderProgram.setMatrix4f("model", command.transform.matrix());
 
@@ -104,5 +118,5 @@ public class Renderer implements Observer<Input> {
             setViewport(0, 0, width, height);
     }
 
-    private record RenderCommand(Transform transform, SimpleTexture simpleTexture) { }
+    private record RenderCommand(Transform transform, Texture simpleTexture) { }
 }
