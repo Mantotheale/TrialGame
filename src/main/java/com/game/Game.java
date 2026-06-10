@@ -9,6 +9,9 @@ import com.game.input.rawcomponents.PhysicalAction;
 import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.*;
+import com.game.renderer.texture.atlas.AtlasGenerator;
+import com.game.renderer.texture.atlas.AtlasLoader;
+import com.game.renderer.texture.atlas.ImageAndMetadata;
 import com.game.transform.Rotation;
 import com.game.transform.Scale;
 import com.game.transform.Transform;
@@ -61,7 +64,20 @@ public class Game implements Observer<Input> {
     private int frames;
 
     public Game() {
-        AtlasGenerator.generateAtlases(List.of(Tile.values()));
+        Path atlasPath = Path.of("src/main/resources/atlases");
+        AtlasLoader atlasLoader = new AtlasLoader(atlasPath);
+        AtlasGenerator atlasGenerator = new AtlasGenerator(atlasPath, 1024);
+
+        var atlases = atlasLoader.loadAtlases();
+        if (atlases.isEmpty()) {
+            System.out.println("Unable to load atlases");
+            atlasGenerator.generateAtlases(List.of(Tile.values()));
+            System.out.println("Successfully generated atlases");
+        } else {
+            System.out.println("Successfully loaded atlases");
+            System.out.println(atlases.get().stream().map(ImageAndMetadata::tileMetadata).toList());
+        }
+
 
         System.out.println("My first game!");
 

@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -15,6 +16,14 @@ public final class IOUtils {
     public static void saveStringToFile(Path path, String s) {
         try {
             Files.writeString(path, s);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String readToString(Path path) {
+        try {
+            return Files.readString(path);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -60,19 +69,38 @@ public final class IOUtils {
             throw new RuntimeException("Couldn't save the image");
     }
 
-    public static void deleteFile(Path path) {
-        try {
-            Files.delete(path);
+    public static List<Path> filesInDirectory(Path path) {
+        try (Stream<Path> files = Files.list(path)) {
+            return files.toList();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Stream<Path> filesInDirectory(Path path) {
-        try {
-            return Files.list(path);
+    public static void deletePath(Path path) {
+        try (Stream<Path> walk = Files.walk(path)) {
+            deleteStream(walk);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to walk path: " + path, e);
         }
+    }
+
+    public static void deletePathContent(Path path) {
+        try (Stream<Path> walk = Files.walk(path)) {
+            deleteStream(walk.filter(p -> !p.equals(path)));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to walk path: " + path, e);
+        }
+    }
+
+    private static void deleteStream(Stream<Path> paths) {
+        paths.sorted(Comparator.reverseOrder())
+                .forEach(p -> {
+                    try {
+                        Files.delete(p);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Failed to delete element " + p, e);
+                    }
+                });
     }
 }
