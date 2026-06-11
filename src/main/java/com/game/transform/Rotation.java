@@ -7,18 +7,16 @@ public record Rotation(float x, float y, float z, float w) {
     public final static Vector3fc WORLD_FRONT = new Vector3f(0, 0, -1);
     public final static Vector3fc WORLD_RIGHT = new Vector3f(1, 0, 0);
 
-    private final static Quaternionf WORKING_MEMORY = new Quaternionf();
-
     public Rotation(float x, float y, float z, float w) {
-        WORKING_MEMORY.set(x, y, z, w).normalize();
-        this.x = WORKING_MEMORY.x;
-        this.y = WORKING_MEMORY.y;
-        this.z = WORKING_MEMORY.z;
-        this.w = WORKING_MEMORY.w;
+        Quaternionf quaternion = new Quaternionf(x, y, z, w).normalize();
+        this.x = quaternion.x;
+        this.y = quaternion.y;
+        this.z = quaternion.z;
+        this.w = quaternion.w;
     }
 
-    public Rotation(Quaternionf q) {
-        this(q.x, q.y, q.z, q.w);
+    public Rotation(Quaternionfc q) {
+        this(q.x(), q.y(), q.z(), q.w());
     }
 
     public Rotation() {
@@ -26,15 +24,19 @@ public record Rotation(float x, float y, float z, float w) {
     }
 
     public Vector3f direction() {
-        return refreshWorkingMemory().transform(WORLD_FRONT, new Vector3f());
+        return new Quaternionf(x, y, z, w).transform(WORLD_FRONT, new Vector3f());
     }
 
     public Matrix4f matrix() {
-        return new Matrix4f().rotation(refreshWorkingMemory());
+        return new Matrix4f().rotation(new Quaternionf(x, y, z, w));
     }
 
-    public Vector3f transformMut(Vector3f vec) {
-        return refreshWorkingMemory().transform(vec);
+    public Quaternionfc quaternion() {
+        return new Quaternionf(x, y, z, w);
+    }
+
+    public Vector3f transform(Vector3fc vec) {
+        return new Quaternionf(x, y, z, w).transform(vec, new Vector3f());
     }
 
     public static Rotation fromDirection(Vector3fc dir) {
@@ -42,10 +44,6 @@ public record Rotation(float x, float y, float z, float w) {
     }
 
     public static Rotation fromDirection(float x, float y, float z) {
-        return new Rotation(WORKING_MEMORY.rotationAxis(0, x,  y, z));
-    }
-
-    private Quaternionf refreshWorkingMemory() {
-        return WORKING_MEMORY.set(x, y, z, w);
+        return new Rotation(new Quaternionf().rotationAxis(0, x,  y, z));
     }
 }

@@ -2,6 +2,7 @@ package com.game.transform;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 public record Transform(Translation translation, Rotation rotation, Scale scale) {
     public Transform() {
@@ -24,7 +25,7 @@ public record Transform(Translation translation, Rotation rotation, Scale scale)
         return t.mulAffine(r).mulAffine(s);
     }
 
-    public Vector3f transformMut(Vector3f vec) {
-        return translation.transformMut(rotation.transformMut(scale.transformMut(vec)));
+    public Vector3f transform(Vector3fc vec) {
+        return translation.transform(rotation.transform(scale.transform(vec)));
     }
 }

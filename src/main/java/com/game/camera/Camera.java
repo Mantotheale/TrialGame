@@ -11,7 +11,6 @@ public class Camera {
     private CameraProjection projection;
     private Transform transform;
 
-
     public Camera(CameraProjection projection, Transform transform) {
         this.projection = projection;
         this.transform = transform;

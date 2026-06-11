@@ -70,12 +70,11 @@ public class Renderer implements Observer<Input> {
         if (intermediateBuffer.position() == intermediateBuffer.limit()) throw new IllegalStateException("Too many pushed quads");
 
         for (int i = 0; i < 4; i++) {
-            WORKING_MEMORY.set(quadCorners[i]);
             Vec2f texCorner = texture.bottomLeftCorner();
             float texWidth = texture.normalizedWidth();
             float texHeight = texture.normalizedHeight();
 
-            Vector3f transformedCorner = transform.transformMut(WORKING_MEMORY);
+            Vector3f transformedCorner = transform.transform(quadCorners[i]);
             intermediateBuffer.putFloat(transformedCorner.x).putFloat(transformedCorner.y).putFloat(transformedCorner.z);
             intermediateBuffer.putInt(texture.texId());
             intermediateBuffer.putFloat(texCorner.x() + texXMultiplier[i] * texWidth);
