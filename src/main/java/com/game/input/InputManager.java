@@ -8,10 +8,10 @@ import com.game.window.Window;
 
 import java.util.Arrays;
 
-public class InputState implements Observer<Input> {
+public class InputManager implements Observer<Input> {
     private final KeyState[] keyStates;
 
-    public InputState(Window window) {
+    public InputManager(Window window) {
         keyStates = new KeyState[PhysicalKey.values().length];
         Arrays.fill(keyStates, KeyState.UP);
 
