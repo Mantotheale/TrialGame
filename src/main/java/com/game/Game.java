@@ -9,17 +9,13 @@ import com.game.input.rawcomponents.PhysicalAction;
 import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.*;
-import com.game.renderer.texture.atlas.AtlasGenerator;
-import com.game.renderer.texture.atlas.AtlasLoader;
-import com.game.renderer.texture.atlas.PathAndMetadata;
-import com.game.renderer.texture.atlas.TextureAtlas;
+import com.game.resourcemanager.ResourceManager;
 import com.game.transform.*;
 import com.game.util.Observer;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
 
 import java.nio.file.Path;
-import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -32,17 +28,7 @@ public class Game implements Observer<Input> {
     private final Window window;
     private final Renderer renderer;
     private final InputState inputState;
-    private final Texture reshiramTexture;
-    private final Texture lowGrassTexture;
-    private final Texture lakeBottomTexture;
-    private final Texture lakeBottomRightTexture;
-    private final Texture lakeRightTexture;
-    private final Texture lakeTopRightTexture;
-    private final Texture lakeTopTexture;
-    private final Texture lakeTopLeftTexture;
-    private final Texture lakeLeftTexture;
-    private final Texture lakeBottomLeftTexture;
-    private final Texture waterTexture;
+    private final ResourceManager resourceManager;
 
     private Transform2D transform1;
     private final Transform2D[] lowGrassTransforms;
@@ -62,55 +48,20 @@ public class Game implements Observer<Input> {
     private int frames;
 
     public Game() {
-        Path atlasPath = Path.of("src/main/resources/atlases");
-        AtlasLoader atlasLoader = new AtlasLoader(atlasPath);
-        AtlasGenerator atlasGenerator = new AtlasGenerator(atlasPath, 1024);
-
-        List<Tile> requestedTiles = List.of(Tile.values());
-        var atlases = atlasLoader.loadAtlases(requestedTiles);
-        if (atlases.isEmpty()) {
-            System.out.println("Unable to load atlases");
-            atlasGenerator.generateAtlases(requestedTiles);
-            System.out.println("Successfully generated atlases");
-        } else {
-            System.out.println("Successfully loaded atlases");
-            System.out.println(atlases.get().stream().map(PathAndMetadata::tilesMetadata).toList());
-        }
-
-
         System.out.println("My first game!");
 
         window = new WindowBuilder().setTitle("Hello World!").build();
-        window.addObserver(this);
-
         window.setVsync(false);
-
-        System.out.println("Max texture size " + glGetInteger(GL_MAX_TEXTURE_SIZE));
+        window.addObserver(this);
 
         renderer = new Renderer(window);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
         inputState = new InputState(window);
 
-        TextureAttributes texAttr = new TextureAttributes.Builder()
-                .magnifyingFilter(TextureMagnifyingFilter.NEAREST)
-                .minifyingFilter(TextureMinifyingFilter.NEAREST_MIPMAP_NEAREST)
-                .mipmap(true)
-                .build();
+        resourceManager = new ResourceManager(Path.of("src/main/resources/atlases"));
 
-        PathAndMetadata reshiramPathMetadata = atlasLoader.loadAtlases(requestedTiles).get().getFirst();
-        TextureAtlas atlas = new TextureAtlas(texAttr, reshiramPathMetadata.path(), reshiramPathMetadata.tilesMetadata());
-        reshiramTexture = atlas.getFromTile(Tile.RESHIRAM);
-        lowGrassTexture = atlas.getFromTile(Tile.GRASS);
-        lakeBottomTexture = atlas.getFromTile(Tile.LAKE_BOTTOM);
-        lakeBottomRightTexture = atlas.getFromTile(Tile.LAKE_BOTTOM_RIGHT);
-        lakeRightTexture = atlas.getFromTile(Tile.LAKE_RIGHT);
-        lakeTopRightTexture = atlas.getFromTile(Tile.LAKE_TOP_RIGHT);
-        lakeTopTexture = atlas.getFromTile(Tile.LAKE_TOP);
-        lakeTopLeftTexture = atlas.getFromTile(Tile.LAKE_TOP_LEFT);
-        lakeLeftTexture = atlas.getFromTile(Tile.LAKE_LEFT);
-        lakeBottomLeftTexture = atlas.getFromTile(Tile.LAKE_BOTTOM_LEFT);
-        waterTexture = atlas.getFromTile(Tile.WATER);
+
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -231,36 +182,23 @@ public class Game implements Observer<Input> {
 
         renderer.beginScene(camera);
 
-        renderer.submit(transform1, reshiramTexture);
-
-        renderer.submit(lakeBottomRightTransform, lakeBottomRightTexture);
-        renderer.submit(lakeTopRightTransform, lakeTopRightTexture);
-        renderer.submit(lakeTopLeftTransform, lakeTopLeftTexture);
-        renderer.submit(lakeBottomLeftTransform, lakeBottomLeftTexture);
-
-        for (Transform2D transform : lakeTopTransforms) {
-            renderer.submit(transform, lakeTopTexture);
-        }
-
-        for (Transform2D transform : lakeBottomTransforms) {
-            renderer.submit(transform, lakeBottomTexture);
-        }
-
-        for (Transform2D transform : lakeRightTransforms) {
-            renderer.submit(transform, lakeRightTexture);
-        }
-
-        for (Transform2D transform : lakeLeftTransforms) {
-            renderer.submit(transform, lakeLeftTexture);
-        }
-
-        for (Transform2D transform : waterTransforms) {
-            renderer.submit(transform, waterTexture);
-        }
-
-        for (Transform2D transform : lowGrassTransforms) {
-            renderer.submit(transform, lowGrassTexture);
-        }
+        renderer.submit(transform1, resourceManager.getTexture(Tile.RESHIRAM));
+        renderer.submit(lakeBottomRightTransform, resourceManager.getTexture(Tile.LAKE_BOTTOM_RIGHT));
+        renderer.submit(lakeTopRightTransform, resourceManager.getTexture(Tile.LAKE_TOP_RIGHT));
+        renderer.submit(lakeTopLeftTransform, resourceManager.getTexture(Tile.LAKE_TOP_LEFT));
+        renderer.submit(lakeBottomLeftTransform, resourceManager.getTexture(Tile.LAKE_BOTTOM_LEFT));
+        for (Transform2D transform : lakeTopTransforms)
+            renderer.submit(transform, resourceManager.getTexture(Tile.LAKE_TOP));
+        for (Transform2D transform : lakeBottomTransforms)
+            renderer.submit(transform, resourceManager.getTexture(Tile.LAKE_BOTTOM));
+        for (Transform2D transform : lakeRightTransforms)
+            renderer.submit(transform, resourceManager.getTexture(Tile.LAKE_RIGHT));
+        for (Transform2D transform : lakeLeftTransforms)
+            renderer.submit(transform, resourceManager.getTexture(Tile.LAKE_LEFT));
+        for (Transform2D transform : waterTransforms)
+            renderer.submit(transform, resourceManager.getTexture(Tile.WATER));
+        for (Transform2D transform : lowGrassTransforms)
+            renderer.submit(transform, resourceManager.getTexture(Tile.GRASS));
 
         renderer.endScene();
 
@@ -281,17 +219,7 @@ public class Game implements Observer<Input> {
     }
 
     private void terminate() {
-        reshiramTexture.delete();
-        lowGrassTexture.delete();
-        lakeBottomTexture.delete();
-        lakeBottomRightTexture.delete();
-        lakeRightTexture.delete();
-        lakeTopRightTexture.delete();
-        lakeTopTexture.delete();
-        lakeTopLeftTexture.delete();
-        lakeLeftTexture.delete();
-        lakeBottomLeftTexture.delete();
-        waterTexture.delete();
+        resourceManager.delete();
         renderer.delete();
         window.delete();
     }
