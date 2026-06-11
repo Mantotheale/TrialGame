@@ -1,14 +1,13 @@
 package com.game.renderer;
 
 import com.game.renderer.texture.Texture;
-import com.game.transform.Transform;
+import com.game.transform.Transform2D;
 
-record RenderCommand(Transform transform, Texture texture) implements Comparable<RenderCommand> {
+record RenderCommand(Transform2D transform, Texture texture) implements Comparable<RenderCommand> {
     @Override
     public int compareTo(RenderCommand other) {
-        float z = this.transform.translation().z();
-        float otherZ = other.transform.translation().z();
-
-        return Float.compare(z, otherZ);
+        int z = this.transform.zIndex();
+        int otherZ = other.transform.zIndex();
+        return Integer.compare(z, otherZ);
     }
 }

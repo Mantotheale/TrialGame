@@ -4,16 +4,16 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-public record Scale(float x, float y, float z) {
-    public Scale(float s) {
+public record Scale3D(float x, float y, float z) {
+    public Scale3D(float s) {
         this(s,s,s);
     }
 
-    public Scale() {
+    public Scale3D() {
         this(1);
     }
 
-    public Scale(Vector3fc v) {
+    public Scale3D(Vector3fc v) {
         this(v.x(), v.y(), v.z());
     }
 

@@ -1,9 +1,8 @@
 package com.game.renderer;
 
 import com.game.renderer.texture.Texture;
-import com.game.transform.Transform;
+import com.game.transform.Transform2D;
 import com.game.util.Vec2f;
-import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
@@ -47,7 +46,7 @@ class Batch {
             textureBindings.put(texture.texId(), textureBindings.size());
         }
 
-        Transform transform = command.transform();
+        Transform2D transform = command.transform();
         insertVertex(transform, texture, BOTTOM_LEFT, texture.bottomLeft());
         insertVertex(transform, texture, BOTTOM_RIGHT, texture.bottomRight());
         insertVertex(transform, texture, TOP_RIGHT, texture.topRight());
@@ -65,12 +64,11 @@ class Batch {
         pushedCommands = 0;
     }
 
-    private void insertVertex(Transform transform, Texture texture, Vector3f posCorner, Vec2f texCorner) {
-        Vector3f tc = transform.transform(posCorner);
-        intermediateBuffer.putFloat(tc.x).putFloat(tc.y).putFloat(tc.z);
+    private void insertVertex(Transform2D transform, Texture texture, Vec2f posCorner, Vec2f texCorner) {
+        Vec2f tc = transform.transform(posCorner);
+        intermediateBuffer.putFloat(tc.x()).putFloat(tc.y());
         intermediateBuffer.putInt(textureBindings.get(texture.texId()));
-        intermediateBuffer.putFloat(texCorner.x());
-        intermediateBuffer.putFloat(texCorner.y());
+        intermediateBuffer.putFloat(texCorner.x()).putFloat(texCorner.y());
     }
 
     public void delete() {
@@ -78,8 +76,8 @@ class Batch {
         MemoryUtil.memFree(intermediateBuffer);
     }
 
-    private final static Vector3f BOTTOM_LEFT = new Vector3f(-0.5f, -0.5f, 0);
-    private final static Vector3f BOTTOM_RIGHT = new Vector3f(0.5f, -0.5f, 0);
-    private final static Vector3f TOP_RIGHT = new Vector3f(0.5f, 0.5f, 0);
-    private final static Vector3f TOP_LEFT = new Vector3f(-0.5f, 0.5f, 0);
+    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f, -0.5f);
+    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f, -0.5f);
+    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f, 0.5f);
+    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f, 0.5f);
 }

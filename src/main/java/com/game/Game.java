@@ -13,10 +13,7 @@ import com.game.renderer.texture.atlas.AtlasGenerator;
 import com.game.renderer.texture.atlas.AtlasLoader;
 import com.game.renderer.texture.atlas.PathAndMetadata;
 import com.game.renderer.texture.atlas.TextureAtlas;
-import com.game.transform.Rotation;
-import com.game.transform.Scale;
-import com.game.transform.Transform;
-import com.game.transform.Translation;
+import com.game.transform.*;
 import com.game.util.Observer;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
@@ -47,17 +44,17 @@ public class Game implements Observer<Input> {
     private final SimpleTexture lakeBottomLeftTexture;
     private final SimpleTexture waterTexture;
 
-    private Transform transform1;
-    private final Transform[] lowGrassTransforms;
-    private final Transform lakeBottomTransform;
-    private final Transform lakeBottomRightTransform;
-    private final Transform lakeRightTransform;
-    private final Transform lakeTopRightTransform;
-    private final Transform lakeTopTransform;
-    private final Transform lakeTopLeftTransform;
-    private final Transform lakeLeftTransform;
-    private final Transform lakeBottomLeftTransform;
-    private final Transform waterTransform;
+    private Transform2D transform1;
+    private final Transform2D[] lowGrassTransforms;
+    private final Transform2D lakeBottomTransform;
+    private final Transform2D lakeBottomRightTransform;
+    private final Transform2D lakeRightTransform;
+    private final Transform2D lakeTopRightTransform;
+    private final Transform2D lakeTopTransform;
+    private final Transform2D lakeTopLeftTransform;
+    private final Transform2D lakeLeftTransform;
+    private final Transform2D lakeBottomLeftTransform;
+    private final Transform2D waterTransform;
 
     private final Camera camera;
 
@@ -101,11 +98,9 @@ public class Game implements Observer<Input> {
                 .mipmap(true)
                 .build();
 
-        //reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/reshiram.png"));
         PathAndMetadata reshiramPathMetadata = atlasLoader.loadAtlases(requestedTiles).get().getFirst();
         TextureAtlas atlas = new TextureAtlas(texAttr, reshiramPathMetadata.path(), reshiramPathMetadata.tilesMetadata());
         reshiramTexture = atlas.getFromTile(Tile.RESHIRAM);
-        //reshiramTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/reshiram.png"));
         lowGrassTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/grass.png"));
         lakeBottomTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom.png"));
         lakeBottomRightTexture = new SimpleTexture(texAttr, Path.of("src/main/resources/tiles/lake_bottom_right.png"));
@@ -122,29 +117,29 @@ public class Game implements Observer<Input> {
 
         camera = new Camera(
                 new CameraProjection.Orthographic(-5, 5, -5, 5, 0.01f, 20),
-                new Transform(new Translation(0, 0, 20), Rotation.fromDirection(Rotation.WORLD_FRONT), new Scale())
+                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D())
         );
 
-        transform1 = new Transform(new Translation(0, 0, 2), new Rotation(), new Scale());
-        lowGrassTransforms = new Transform[(11 * 11) - 1];
+        transform1 = new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2);
+        lowGrassTransforms = new Transform2D[(11 * 11) - 1];
         int idx = 0;
         for (int i = -5; i <= 5; i++) {
             for (int j = -5; j <= 5; j++) {
                 if (i != 0 || j != 0) {
-                    lowGrassTransforms[idx] = new Transform(new Translation(i, j, 0), new Rotation(), new Scale());
+                    lowGrassTransforms[idx] = new Transform2D(new Translation2D(i, j), Scale2D.UNIT, 0);
                     idx++;
                 }
             }
         }
-        lakeBottomTransform = new Transform(new Translation(0, -1, 1), new Rotation(), new Scale());
-        lakeBottomRightTransform = new Transform(new Translation(1, -1, 1), new Rotation(), new Scale());
-        lakeRightTransform = new Transform(new Translation(1, 0, 1), new Rotation(), new Scale());
-        lakeTopRightTransform = new Transform(new Translation(1, 1, 1), new Rotation(), new Scale());
-        lakeTopTransform = new Transform(new Translation(0, 1, 1), new Rotation(), new Scale());
-        lakeTopLeftTransform = new Transform(new Translation(-1, 1, 1), new Rotation(), new Scale());
-        lakeLeftTransform = new Transform(new Translation(-1, 0, 1), new Rotation(), new Scale());
-        lakeBottomLeftTransform = new Transform(new Translation(-1, -1, 1), new Rotation(), new Scale());
-        waterTransform = new Transform(new Translation(0, 0, 0), new Rotation(), new Scale());
+        lakeBottomTransform = new Transform2D(new Translation2D(0, -1), Scale2D.UNIT, 1);
+        lakeBottomRightTransform = new Transform2D(new Translation2D(1, -1), Scale2D.UNIT, 1);
+        lakeRightTransform = new Transform2D(new Translation2D(1, 0), Scale2D.UNIT, 1);
+        lakeTopRightTransform = new Transform2D(new Translation2D(1, 1), Scale2D.UNIT, 1);
+        lakeTopTransform = new Transform2D(new Translation2D(0, 1), Scale2D.UNIT, 1);
+        lakeTopLeftTransform = new Transform2D(new Translation2D(-1, 1), Scale2D.UNIT, 1);
+        lakeLeftTransform = new Transform2D(new Translation2D(-1, 0), Scale2D.UNIT, 1);
+        lakeBottomLeftTransform = new Transform2D(new Translation2D(-1, -1), Scale2D.UNIT, 1);
+        waterTransform = new Transform2D(Translation2D.ORIGIN, Scale2D.UNIT, 0);
 
         updates = 0;
         frames = 0;
@@ -183,29 +178,29 @@ public class Game implements Observer<Input> {
         updates++;
 
         if (inputState.keyState(PhysicalKey.W) == KeyState.DOWN) {
-            transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME, 0);
+            transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME);
         }
         if (inputState.keyState(PhysicalKey.S) == KeyState.DOWN) {
-            transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME, 0);
+            transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME);
         }
         if (inputState.keyState(PhysicalKey.A) == KeyState.DOWN) {
-            transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0, 0);
+            transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0);
         }
         if (inputState.keyState(PhysicalKey.D) == KeyState.DOWN) {
-            transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0, 0);
+            transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0);
         }
 
         if (inputState.keyState(PhysicalKey.UP) == KeyState.DOWN) {
-            camera.move(new Translation(0, 2 * (float) UPDATE_TIME, 0));
+            camera.move(new Translation3D(0, 2 * (float) UPDATE_TIME, 0));
         }
         if (inputState.keyState(PhysicalKey.DOWN) == KeyState.DOWN) {
-            camera.move(new Translation(0, -2 * (float) UPDATE_TIME, 0));
+            camera.move(new Translation3D(0, -2 * (float) UPDATE_TIME, 0));
         }
         if (inputState.keyState(PhysicalKey.LEFT) == KeyState.DOWN) {
-            camera.move(new Translation(-2 * (float) UPDATE_TIME, 0, 0));
+            camera.move(new Translation3D(-2 * (float) UPDATE_TIME, 0, 0));
         }
         if (inputState.keyState(PhysicalKey.RIGHT) == KeyState.DOWN) {
-            camera.move(new Translation(2 * (float) UPDATE_TIME, 0, 0));
+            camera.move(new Translation3D(2 * (float) UPDATE_TIME, 0, 0));
         }
     }
 
@@ -232,7 +227,7 @@ public class Game implements Observer<Input> {
         renderer.submit(lakeBottomLeftTransform, lakeBottomLeftTexture);
         renderer.submit(waterTransform, waterTexture);
 
-        for (Transform transform : lowGrassTransforms) {
+        for (Transform2D transform : lowGrassTransforms) {
             renderer.submit(transform, lowGrassTexture);
         }
 

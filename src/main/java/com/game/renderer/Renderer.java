@@ -5,7 +5,7 @@ import com.game.input.Input;
 import com.game.input.ResizeFrameBuffer;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
-import com.game.transform.Transform;
+import com.game.transform.Transform2D;
 import com.game.util.Observer;
 import com.game.window.Window;
 import org.lwjgl.system.MemoryUtil;
@@ -27,7 +27,7 @@ public class Renderer implements Observer<Input> {
 
     public Renderer(Window window) {
         VertexLayout vertexLayout = new VertexLayout.Builder()
-                .pushFloats(3)
+                .pushFloats(2)
                 .pushInts(1)
                 .pushFloats(2)
                 .build();
@@ -52,7 +52,7 @@ public class Renderer implements Observer<Input> {
         this.camera = camera;
     }
 
-    public void submit(Transform transform, Texture texture) {
+    public void submit(Transform2D transform, Texture texture) {
         if (commandQueue.size() >= MAX_QUAD_COUNT) throw new IllegalStateException("Too many pushed quads, max is " + MAX_QUAD_COUNT);
         commandQueue.add(new RenderCommand(transform, texture));
     }

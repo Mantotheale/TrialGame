@@ -2,12 +2,12 @@ package com.game.transform;
 
 import org.joml.*;
 
-public record Rotation(float x, float y, float z, float w) {
+public record Rotation3D(float x, float y, float z, float w) {
     public final static Vector3fc WORLD_UP = new Vector3f(0, 1, 0);
     public final static Vector3fc WORLD_FRONT = new Vector3f(0, 0, -1);
     public final static Vector3fc WORLD_RIGHT = new Vector3f(1, 0, 0);
 
-    public Rotation(float x, float y, float z, float w) {
+    public Rotation3D(float x, float y, float z, float w) {
         Quaternionf quaternion = new Quaternionf(x, y, z, w).normalize();
         this.x = quaternion.x;
         this.y = quaternion.y;
@@ -15,11 +15,11 @@ public record Rotation(float x, float y, float z, float w) {
         this.w = quaternion.w;
     }
 
-    public Rotation(Quaternionfc q) {
+    public Rotation3D(Quaternionfc q) {
         this(q.x(), q.y(), q.z(), q.w());
     }
 
-    public Rotation() {
+    public Rotation3D() {
         this(0, 0, 0, 1);
     }
 
@@ -39,11 +39,11 @@ public record Rotation(float x, float y, float z, float w) {
         return new Quaternionf(x, y, z, w).transform(vec, new Vector3f());
     }
 
-    public static Rotation fromDirection(Vector3fc dir) {
+    public static Rotation3D fromDirection(Vector3fc dir) {
         return fromDirection(dir.x(), dir.y(), dir.z());
     }
 
-    public static Rotation fromDirection(float x, float y, float z) {
-        return new Rotation(new Quaternionf().rotationAxis(0, x,  y, z));
+    public static Rotation3D fromDirection(float x, float y, float z) {
+        return new Rotation3D(new Quaternionf().rotationAxis(0, x,  y, z));
     }
 }
