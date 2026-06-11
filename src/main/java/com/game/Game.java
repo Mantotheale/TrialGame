@@ -46,15 +46,15 @@ public class Game implements Observer<Input> {
 
     private Transform2D transform1;
     private final Transform2D[] lowGrassTransforms;
-    private final Transform2D lakeBottomTransform;
+    private final Transform2D[] waterTransforms;
+    private final Transform2D[] lakeBottomTransforms;
+    private final Transform2D[] lakeRightTransforms;
+    private final Transform2D[] lakeTopTransforms;
+    private final Transform2D[] lakeLeftTransforms;
     private final Transform2D lakeBottomRightTransform;
-    private final Transform2D lakeRightTransform;
     private final Transform2D lakeTopRightTransform;
-    private final Transform2D lakeTopTransform;
     private final Transform2D lakeTopLeftTransform;
-    private final Transform2D lakeLeftTransform;
     private final Transform2D lakeBottomLeftTransform;
-    private final Transform2D waterTransform;
 
     private final Camera camera;
 
@@ -121,25 +121,40 @@ public class Game implements Observer<Input> {
         );
 
         transform1 = new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2);
-        lowGrassTransforms = new Transform2D[(11 * 11) - 1];
+        lowGrassTransforms = new Transform2D[(11 * 11) - (3 * 3)];
         int idx = 0;
         for (int i = -5; i <= 5; i++) {
             for (int j = -5; j <= 5; j++) {
-                if (i != 0 || j != 0) {
+                if (i < -1 || i > 1 || j < -1 || j > 1) {
                     lowGrassTransforms[idx] = new Transform2D(new Translation2D(i, j), Scale2D.UNIT, 0);
                     idx++;
                 }
             }
         }
-        lakeBottomTransform = new Transform2D(new Translation2D(0, -1), Scale2D.UNIT, 1);
-        lakeBottomRightTransform = new Transform2D(new Translation2D(1, -1), Scale2D.UNIT, 1);
-        lakeRightTransform = new Transform2D(new Translation2D(1, 0), Scale2D.UNIT, 1);
-        lakeTopRightTransform = new Transform2D(new Translation2D(1, 1), Scale2D.UNIT, 1);
-        lakeTopTransform = new Transform2D(new Translation2D(0, 1), Scale2D.UNIT, 1);
-        lakeTopLeftTransform = new Transform2D(new Translation2D(-1, 1), Scale2D.UNIT, 1);
-        lakeLeftTransform = new Transform2D(new Translation2D(-1, 0), Scale2D.UNIT, 1);
-        lakeBottomLeftTransform = new Transform2D(new Translation2D(-1, -1), Scale2D.UNIT, 1);
-        waterTransform = new Transform2D(Translation2D.ORIGIN, Scale2D.UNIT, 0);
+
+        idx = 0;
+        waterTransforms = new Transform2D[3 * 3];
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                waterTransforms[idx] = new Transform2D(new Translation2D(i, j), Scale2D.UNIT, 0);
+                idx++;
+            }
+        }
+
+        lakeBottomTransforms = new Transform2D[3];
+        lakeTopTransforms = new Transform2D[3];
+        lakeRightTransforms = new Transform2D[3];
+        lakeLeftTransforms = new Transform2D[3];
+        for (int i = 0; i < 3; i++) {
+            lakeBottomTransforms[i] = new Transform2D(new Translation2D(-1 + i, -2), Scale2D.UNIT, 1);
+            lakeTopTransforms[i] = new Transform2D(new Translation2D(-1 + i, 2), Scale2D.UNIT, 1);
+            lakeRightTransforms[i] = new Transform2D(new Translation2D(2, -1 + i), Scale2D.UNIT, 1);
+            lakeLeftTransforms[i] = new Transform2D(new Translation2D(-2, -1 + i), Scale2D.UNIT, 1);
+        }
+        lakeBottomRightTransform = new Transform2D(new Translation2D(2, -2), Scale2D.UNIT, 1);
+        lakeTopRightTransform = new Transform2D(new Translation2D(2, 2), Scale2D.UNIT, 1);
+        lakeTopLeftTransform = new Transform2D(new Translation2D(-2, 2), Scale2D.UNIT, 1);
+        lakeBottomLeftTransform = new Transform2D(new Translation2D(-2, -2), Scale2D.UNIT, 1);
 
         updates = 0;
         frames = 0;
@@ -217,15 +232,31 @@ public class Game implements Observer<Input> {
         renderer.beginScene(camera);
 
         renderer.submit(transform1, reshiramTexture);
-        renderer.submit(lakeBottomTransform, lakeBottomTexture);
+
         renderer.submit(lakeBottomRightTransform, lakeBottomRightTexture);
-        renderer.submit(lakeRightTransform, lakeRightTexture);
         renderer.submit(lakeTopRightTransform, lakeTopRightTexture);
-        renderer.submit(lakeTopTransform, lakeTopTexture);
         renderer.submit(lakeTopLeftTransform, lakeTopLeftTexture);
-        renderer.submit(lakeLeftTransform, lakeLeftTexture);
         renderer.submit(lakeBottomLeftTransform, lakeBottomLeftTexture);
-        renderer.submit(waterTransform, waterTexture);
+
+        for (Transform2D transform : lakeTopTransforms) {
+            renderer.submit(transform, lakeTopTexture);
+        }
+
+        for (Transform2D transform : lakeBottomTransforms) {
+            renderer.submit(transform, lakeBottomTexture);
+        }
+
+        for (Transform2D transform : lakeRightTransforms) {
+            renderer.submit(transform, lakeRightTexture);
+        }
+
+        for (Transform2D transform : lakeLeftTransforms) {
+            renderer.submit(transform, lakeLeftTexture);
+        }
+
+        for (Transform2D transform : waterTransforms) {
+            renderer.submit(transform, waterTexture);
+        }
 
         for (Transform2D transform : lowGrassTransforms) {
             renderer.submit(transform, lowGrassTexture);
