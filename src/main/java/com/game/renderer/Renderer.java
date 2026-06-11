@@ -15,14 +15,16 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.TreeMap;
 
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
 public class Renderer implements Observer<Input> {
     private static final int MAX_QUAD_COUNT = 10000;
-    private static final int TEXTURE_UNITS = 16;
+    private static final int TEXTURE_UNITS = 8;
 
     private final QuadBuffer quadBuffer;
     private final ShaderProgram shaderProgram;
@@ -34,6 +36,7 @@ public class Renderer implements Observer<Input> {
     private final int[] texYMultiplier;
 
     private final PriorityQueue<RenderCommand> commandQueue;
+    private final Map<Integer, Integer> textureBindings;
 
     public Renderer(Window window) {
         VertexLayout vertexLayout = new VertexLayout.Builder()
@@ -48,6 +51,9 @@ public class Renderer implements Observer<Input> {
                 Path.of("src/main/resources/shaders/vertexshader.vert"),
                 Path.of("src/main/resources/shaders/fragmentshader.frag")
         );
+        glUseProgram(shaderProgram.id());
+        for (int i = 0; i < TEXTURE_UNITS; i++)
+            shaderProgram.setInt("tex[" + i + "]", i);
 
         intermediateBuffer = MemoryUtil.memAlloc(MAX_QUAD_COUNT * QuadBuffer.VERTICES_PER_QUAD * vertexLayout.size()).order(ByteOrder.nativeOrder());
         quadCorners = new Vector3f[] {
@@ -65,6 +71,8 @@ public class Renderer implements Observer<Input> {
             return Float.compare(z1, z2);
         });
 
+        textureBindings = new TreeMap<>();
+
         window.addObserver(this);
     }
 
@@ -80,12 +88,29 @@ public class Renderer implements Observer<Input> {
     public void endScene() {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        int insertedQuads = commandQueue.size();
+        glUseProgram(shaderProgram.id());
+        shaderProgram.setMatrix4f("viewProjection", camera.matrix());
 
+        int insertedQuads = 0;
         while (!commandQueue.isEmpty()) {
             RenderCommand command = commandQueue.poll();
             Texture texture = command.texture;
             Transform transform = command.transform;
+
+            if (!textureBindings.containsKey(texture.texId())) {
+                if (textureBindings.size() == TEXTURE_UNITS) {
+                    quadBuffer.setData(intermediateBuffer.flip());
+                    glBindVertexArray(quadBuffer.id());
+                    glDrawElements(GL_TRIANGLES, QuadBuffer.INDICES_PER_QUAD * insertedQuads, GL_UNSIGNED_INT, 0);
+                    intermediateBuffer.clear();
+                    insertedQuads = 0;
+                    textureBindings.clear();
+                }
+
+                glActiveTexture(GL_TEXTURE0 + textureBindings.size());
+                glBindTexture(GL_TEXTURE_2D, texture.texId());
+                textureBindings.put(texture.texId(), textureBindings.size());
+            }
 
             for (int i = 0; i < 4; i++) {
                 Vec2f texCorner = texture.bottomLeftCorner();
@@ -94,27 +119,20 @@ public class Renderer implements Observer<Input> {
 
                 Vector3f transformedCorner = transform.transform(quadCorners[i]);
                 intermediateBuffer.putFloat(transformedCorner.x).putFloat(transformedCorner.y).putFloat(transformedCorner.z);
-                intermediateBuffer.putInt(texture.texId());
+                intermediateBuffer.putInt(textureBindings.get(texture.texId()));
                 intermediateBuffer.putFloat(texCorner.x() + texXMultiplier[i] * texWidth);
                 intermediateBuffer.putFloat(texCorner.y() + texYMultiplier[i] * texHeight);
             }
 
-            glActiveTexture(GL_TEXTURE0 + texture.texId());
-            glBindTexture(GL_TEXTURE_2D, texture.texId());
+            insertedQuads++;
         }
 
-        glUseProgram(shaderProgram.id());
-        shaderProgram.setMatrix4f("viewProjection", camera.matrix());
-
-        for (int i = 0; i < TEXTURE_UNITS; i++)
-            shaderProgram.setInt("tex[" + i + "]", i);
-
         quadBuffer.setData(intermediateBuffer.flip());
-
         glBindVertexArray(quadBuffer.id());
         glDrawElements(GL_TRIANGLES, QuadBuffer.INDICES_PER_QUAD * insertedQuads, GL_UNSIGNED_INT, 0);
-
         intermediateBuffer.clear();
+        textureBindings.clear();
+
         camera = null;
     }
 
