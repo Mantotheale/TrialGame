@@ -16,7 +16,6 @@ public class TextureAtlas implements Texture {
 
     public TextureAtlas(TextureAttributes attributes, Path path, List<TileMetadata> tilesMetadata) {
         innerTexture = new SimpleTexture(attributes, path);
-        System.out.println(path);
 
         subTextures = new EnumMap<>(Tile.class);
         tilesMetadata.forEach(
@@ -36,7 +35,6 @@ public class TextureAtlas implements Texture {
                         )
                 )
         );
-        System.out.println(subTextures);
     }
 
     public boolean isTileContained(Tile tile) {

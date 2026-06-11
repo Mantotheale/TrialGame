@@ -63,9 +63,6 @@ public final class AtlasGenerator {
             Path imagePath = atlasDirectory.resolve("atlas_" + (tilesMetadata.size() + 1) + ".png");
             IOUtils.saveImage(imagePath, atlasAndMetadata.image());
 
-            System.out.println("Created atlas " + (tilesMetadata.size() + 1));
-            System.out.println("With metadata: " + atlasAndMetadata.tileMetadata());
-
             tilesMetadata.add(atlasAndMetadata.tileMetadata());
         }
 
