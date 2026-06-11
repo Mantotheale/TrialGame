@@ -21,10 +21,15 @@ import static org.lwjgl.opengl.GL30.glGenerateMipmap;
 import static org.lwjgl.stb.STBImage.*;
 
 public class SimpleTexture implements Texture {
+    private final static Vec2f bottomLeft = new Vec2f(0, 0);
+    private final static Vec2f bottomRight = new Vec2f(1, 0);
+    private final static Vec2f topRight = new Vec2f(1, 1);
+    private final static Vec2f topLeft = new Vec2f(0, 1);
+
     private final int id;
     private final int width;
     private final int height;
-    private final Vec2f bottomLeft;
+
 
     public SimpleTexture(TextureAttributes attributes, Path path) {
         this.id = glGenTextures();
@@ -53,8 +58,6 @@ public class SimpleTexture implements Texture {
 
         if (attributes.mipmap)
             glGenerateMipmap(GL_TEXTURE_2D);
-
-        this.bottomLeft = new Vec2f(0, 0);
     }
 
     @Override
@@ -88,7 +91,22 @@ public class SimpleTexture implements Texture {
     }
 
     @Override
-    public Vec2f bottomLeftCorner() {
+    public Vec2f bottomLeft() {
         return bottomLeft;
+    }
+
+    @Override
+    public Vec2f bottomRight() {
+        return bottomRight;
+    }
+
+    @Override
+    public Vec2f topRight() {
+        return topRight;
+    }
+
+    @Override
+    public Vec2f topLeft() {
+        return topLeft;
     }
 }

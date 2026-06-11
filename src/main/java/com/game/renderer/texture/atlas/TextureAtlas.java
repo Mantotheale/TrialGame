@@ -28,7 +28,11 @@ public class TextureAtlas implements Texture {
                                 m.height(),
                                 (float) m.width() / innerTexture.bitWidth(),
                                 (float) m.height() / innerTexture.bitHeight(),
-                                new Vec2f((float) m.cornerX() / innerTexture.bitWidth(), (float) m.cornerY() / innerTexture.bitHeight())
+                                new Vec2f((float) m.cornerX() / innerTexture.bitWidth(), (float) m.cornerY() / innerTexture.bitHeight()),
+                                new Vec2f((float) (m.cornerX() + m.width()) / innerTexture.bitWidth(), (float) m.cornerY() / innerTexture.bitHeight()),
+                                new Vec2f((float) (m.cornerX() + m.width()) / innerTexture.bitWidth(), (float) (m.cornerY() + m.height()) / innerTexture.bitHeight()),
+                                new Vec2f((float) m.cornerX() / innerTexture.bitWidth(), (float) (m.cornerY() + m.height()) / innerTexture.bitHeight())
+
                         )
                 )
         );
@@ -69,8 +73,23 @@ public class TextureAtlas implements Texture {
     }
 
     @Override
-    public Vec2f bottomLeftCorner() {
-        return innerTexture.bottomLeftCorner();
+    public Vec2f bottomLeft() {
+        return innerTexture.bottomLeft();
+    }
+
+    @Override
+    public Vec2f bottomRight() {
+        return innerTexture.bottomRight();
+    }
+
+    @Override
+    public Vec2f topRight() {
+        return innerTexture.topRight();
+    }
+
+    @Override
+    public Vec2f topLeft() {
+        return innerTexture.topLeft();
     }
 
     @Override
@@ -78,7 +97,17 @@ public class TextureAtlas implements Texture {
         innerTexture.delete();
     }
 
-    private record AtlasSubTexture(int texId, int bitWidth, int bitHeight, float normalizedWidth, float normalizedHeight, Vec2f bottomLeftCorner) implements Texture {
+    private record AtlasSubTexture(
+            int texId,
+            int bitWidth,
+            int bitHeight,
+            float normalizedWidth,
+            float normalizedHeight,
+            Vec2f bottomLeft,
+            Vec2f bottomRight,
+            Vec2f topRight,
+            Vec2f topLeft
+            ) implements Texture {
         @Override
         public void delete() { }
     }

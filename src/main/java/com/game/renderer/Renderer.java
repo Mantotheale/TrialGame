@@ -7,36 +7,23 @@ import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform;
 import com.game.util.Observer;
-import com.game.util.Vec2f;
 import com.game.window.Window;
-import org.joml.Vector3f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.TreeMap;
 
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
 
 public class Renderer implements Observer<Input> {
     private static final int MAX_QUAD_COUNT = 10000;
     private static final int TEXTURE_UNITS = 8;
 
-    private final QuadBuffer quadBuffer;
+    private final PriorityQueue<RenderCommand> commandQueue;
+    private final Batch batch;
     private final ShaderProgram shaderProgram;
     private Camera camera;
-
-    private final ByteBuffer intermediateBuffer;
-    private final Vector3f[] quadCorners;
-    private final int[] texXMultiplier;
-    private final int[] texYMultiplier;
-
-    private final PriorityQueue<RenderCommand> commandQueue;
-    private final Map<Integer, Integer> textureBindings;
 
     public Renderer(Window window) {
         VertexLayout vertexLayout = new VertexLayout.Builder()
@@ -44,8 +31,9 @@ public class Renderer implements Observer<Input> {
                 .pushInts(1)
                 .pushFloats(2)
                 .build();
-
-        this.quadBuffer = new QuadBuffer(vertexLayout, MAX_QUAD_COUNT);
+        QuadBuffer quadBuffer = new QuadBuffer(vertexLayout, MAX_QUAD_COUNT);
+        ByteBuffer intermediateBuffer = MemoryUtil.memAlloc(MAX_QUAD_COUNT * QuadBuffer.VERTICES_PER_QUAD * vertexLayout.size());
+        this.batch = new Batch(quadBuffer, intermediateBuffer, TEXTURE_UNITS);
 
         shaderProgram = ShaderProgram.fromPaths(
                 Path.of("src/main/resources/shaders/vertexshader.vert"),
@@ -55,23 +43,7 @@ public class Renderer implements Observer<Input> {
         for (int i = 0; i < TEXTURE_UNITS; i++)
             shaderProgram.setInt("tex[" + i + "]", i);
 
-        intermediateBuffer = MemoryUtil.memAlloc(MAX_QUAD_COUNT * QuadBuffer.VERTICES_PER_QUAD * vertexLayout.size()).order(ByteOrder.nativeOrder());
-        quadCorners = new Vector3f[] {
-                new Vector3f(-0.5f, -0.5f, 0),
-                new Vector3f(0.5f, -0.5f, 0),
-                new Vector3f(0.5f, 0.5f, 0),
-                new Vector3f(-0.5f, 0.5f, 0)
-        };
-        texXMultiplier = new int[] { 0, 1, 1, 0};
-        texYMultiplier = new int[] { 0, 0, 1, 1};
-
-        commandQueue = new PriorityQueue<>((c1, c2) -> {
-            float z1 = c1.transform.translation().z();
-            float z2 = c2.transform.translation().z();
-            return Float.compare(z1, z2);
-        });
-
-        textureBindings = new TreeMap<>();
+        commandQueue = new PriorityQueue<>();
 
         window.addObserver(this);
     }
@@ -91,55 +63,20 @@ public class Renderer implements Observer<Input> {
         glUseProgram(shaderProgram.id());
         shaderProgram.setMatrix4f("viewProjection", camera.matrix());
 
-        int insertedQuads = 0;
         while (!commandQueue.isEmpty()) {
             RenderCommand command = commandQueue.poll();
-            Texture texture = command.texture;
-            Transform transform = command.transform;
-
-            if (!textureBindings.containsKey(texture.texId())) {
-                if (textureBindings.size() == TEXTURE_UNITS) {
-                    quadBuffer.setData(intermediateBuffer.flip());
-                    glBindVertexArray(quadBuffer.id());
-                    glDrawElements(GL_TRIANGLES, QuadBuffer.INDICES_PER_QUAD * insertedQuads, GL_UNSIGNED_INT, 0);
-                    intermediateBuffer.clear();
-                    insertedQuads = 0;
-                    textureBindings.clear();
-                }
-
-                glActiveTexture(GL_TEXTURE0 + textureBindings.size());
-                glBindTexture(GL_TEXTURE_2D, texture.texId());
-                textureBindings.put(texture.texId(), textureBindings.size());
-            }
-
-            for (int i = 0; i < 4; i++) {
-                Vec2f texCorner = texture.bottomLeftCorner();
-                float texWidth = texture.normalizedWidth();
-                float texHeight = texture.normalizedHeight();
-
-                Vector3f transformedCorner = transform.transform(quadCorners[i]);
-                intermediateBuffer.putFloat(transformedCorner.x).putFloat(transformedCorner.y).putFloat(transformedCorner.z);
-                intermediateBuffer.putInt(textureBindings.get(texture.texId()));
-                intermediateBuffer.putFloat(texCorner.x() + texXMultiplier[i] * texWidth);
-                intermediateBuffer.putFloat(texCorner.y() + texYMultiplier[i] * texHeight);
-            }
-
-            insertedQuads++;
+            if (!batch.canAddCommand(command))
+                batch.flush();
+            batch.addCommand(command);
         }
 
-        quadBuffer.setData(intermediateBuffer.flip());
-        glBindVertexArray(quadBuffer.id());
-        glDrawElements(GL_TRIANGLES, QuadBuffer.INDICES_PER_QUAD * insertedQuads, GL_UNSIGNED_INT, 0);
-        intermediateBuffer.clear();
-        textureBindings.clear();
-
+        batch.flush();
         camera = null;
     }
 
     public void delete() {
-        quadBuffer.delete();
+        batch.delete();
         shaderProgram.delete();
-        MemoryUtil.memFree(intermediateBuffer);
         commandQueue.clear();
     }
 
@@ -156,6 +93,4 @@ public class Renderer implements Observer<Input> {
         if (value instanceof ResizeFrameBuffer(int width, int height))
             setViewport(0, 0, width, height);
     }
-
-    private record RenderCommand(Transform transform, Texture texture) { }
 }

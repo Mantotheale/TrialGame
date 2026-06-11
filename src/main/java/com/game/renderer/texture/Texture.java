@@ -8,6 +8,9 @@ public interface Texture {
     int bitHeight();
     float normalizedWidth();
     float normalizedHeight();
-    Vec2f bottomLeftCorner();
+    Vec2f bottomLeft();
+    Vec2f bottomRight();
+    Vec2f topRight();
+    Vec2f topLeft();
     void delete();
 }
