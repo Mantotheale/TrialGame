@@ -126,12 +126,14 @@ public class Game implements Observer<Input> {
         );
 
         transform1 = new Transform(new Translation(0, 0, 2), new Rotation(), new Scale());
-        lowGrassTransforms = new Transform[11 * 11];
+        lowGrassTransforms = new Transform[(11 * 11) - 1];
         int idx = 0;
         for (int i = -5; i <= 5; i++) {
             for (int j = -5; j <= 5; j++) {
-                lowGrassTransforms[idx] = new Transform(new Translation(i, j, 0), new Rotation(), new Scale());
-                idx++;
+                if (i != 0 || j != 0) {
+                    lowGrassTransforms[idx] = new Transform(new Translation(i, j, 0), new Rotation(), new Scale());
+                    idx++;
+                }
             }
         }
         lakeBottomTransform = new Transform(new Translation(0, -1, 1), new Rotation(), new Scale());
@@ -218,9 +220,8 @@ public class Game implements Observer<Input> {
         frames++;
 
         renderer.beginScene(camera);
-        for (Transform transform : lowGrassTransforms) {
-            renderer.submit(transform, lowGrassTexture);
-        }
+
+        renderer.submit(transform1, reshiramTexture);
         renderer.submit(lakeBottomTransform, lakeBottomTexture);
         renderer.submit(lakeBottomRightTransform, lakeBottomRightTexture);
         renderer.submit(lakeRightTransform, lakeRightTexture);
@@ -231,7 +232,10 @@ public class Game implements Observer<Input> {
         renderer.submit(lakeBottomLeftTransform, lakeBottomLeftTexture);
         renderer.submit(waterTransform, waterTexture);
 
-        renderer.submit(transform1, reshiramTexture);
+        for (Transform transform : lowGrassTransforms) {
+            renderer.submit(transform, lowGrassTexture);
+        }
+
         renderer.endScene();
 
         window.swapBuffers();

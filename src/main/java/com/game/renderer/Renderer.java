@@ -15,6 +15,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
+import java.util.PriorityQueue;
 
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
@@ -28,11 +29,11 @@ public class Renderer implements Observer<Input> {
     private Camera camera;
 
     private final ByteBuffer intermediateBuffer;
-    private int insertedQuads;
     private final Vector3f[] quadCorners;
     private final int[] texXMultiplier;
     private final int[] texYMultiplier;
-    private final static Vector3f WORKING_MEMORY = new Vector3f();
+
+    private final PriorityQueue<RenderCommand> commandQueue;
 
     public Renderer(Window window) {
         VertexLayout vertexLayout = new VertexLayout.Builder()
@@ -57,7 +58,12 @@ public class Renderer implements Observer<Input> {
         };
         texXMultiplier = new int[] { 0, 1, 1, 0};
         texYMultiplier = new int[] { 0, 0, 1, 1};
-        insertedQuads = 0;
+
+        commandQueue = new PriorityQueue<>((c1, c2) -> {
+            float z1 = c1.transform.translation().z();
+            float z2 = c2.transform.translation().z();
+            return Float.compare(z1, z2);
+        });
 
         window.addObserver(this);
     }
@@ -67,28 +73,35 @@ public class Renderer implements Observer<Input> {
     }
 
     public void submit(Transform transform, Texture texture) {
-        if (intermediateBuffer.position() == intermediateBuffer.limit()) throw new IllegalStateException("Too many pushed quads");
-
-        for (int i = 0; i < 4; i++) {
-            Vec2f texCorner = texture.bottomLeftCorner();
-            float texWidth = texture.normalizedWidth();
-            float texHeight = texture.normalizedHeight();
-
-            Vector3f transformedCorner = transform.transform(quadCorners[i]);
-            intermediateBuffer.putFloat(transformedCorner.x).putFloat(transformedCorner.y).putFloat(transformedCorner.z);
-            intermediateBuffer.putInt(texture.texId());
-            intermediateBuffer.putFloat(texCorner.x() + texXMultiplier[i] * texWidth);
-            intermediateBuffer.putFloat(texCorner.y() + texYMultiplier[i] * texHeight);
-        }
-
-        insertedQuads++;
-
-        glActiveTexture(GL_TEXTURE0 + texture.texId());
-        glBindTexture(GL_TEXTURE_2D, texture.texId());
+        if (commandQueue.size() >= MAX_QUAD_COUNT) throw new IllegalStateException("Too many pushed quads, max is " + MAX_QUAD_COUNT);
+        commandQueue.add(new RenderCommand(transform, texture));
     }
 
     public void endScene() {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        int insertedQuads = commandQueue.size();
+
+        while (!commandQueue.isEmpty()) {
+            RenderCommand command = commandQueue.poll();
+            Texture texture = command.texture;
+            Transform transform = command.transform;
+
+            for (int i = 0; i < 4; i++) {
+                Vec2f texCorner = texture.bottomLeftCorner();
+                float texWidth = texture.normalizedWidth();
+                float texHeight = texture.normalizedHeight();
+
+                Vector3f transformedCorner = transform.transform(quadCorners[i]);
+                intermediateBuffer.putFloat(transformedCorner.x).putFloat(transformedCorner.y).putFloat(transformedCorner.z);
+                intermediateBuffer.putInt(texture.texId());
+                intermediateBuffer.putFloat(texCorner.x() + texXMultiplier[i] * texWidth);
+                intermediateBuffer.putFloat(texCorner.y() + texYMultiplier[i] * texHeight);
+            }
+
+            glActiveTexture(GL_TEXTURE0 + texture.texId());
+            glBindTexture(GL_TEXTURE_2D, texture.texId());
+        }
 
         glUseProgram(shaderProgram.id());
         shaderProgram.setMatrix4f("viewProjection", camera.matrix());
@@ -102,7 +115,6 @@ public class Renderer implements Observer<Input> {
         glDrawElements(GL_TRIANGLES, QuadBuffer.INDICES_PER_QUAD * insertedQuads, GL_UNSIGNED_INT, 0);
 
         intermediateBuffer.clear();
-        insertedQuads = 0;
         camera = null;
     }
 
@@ -110,6 +122,7 @@ public class Renderer implements Observer<Input> {
         quadBuffer.delete();
         shaderProgram.delete();
         MemoryUtil.memFree(intermediateBuffer);
+        commandQueue.clear();
     }
 
     public void setViewport(int originX, int originY, int width, int height) {
@@ -125,4 +138,6 @@ public class Renderer implements Observer<Input> {
         if (value instanceof ResizeFrameBuffer(int width, int height))
             setViewport(0, 0, width, height);
     }
+
+    private record RenderCommand(Transform transform, Texture texture) { }
 }
