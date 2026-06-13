@@ -2,19 +2,14 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
-import com.game.event.CloseGameRequestEvent;
-import com.game.event.Event;
-import com.game.event.EventDispatcher;
+import com.game.event.*;
 import com.game.input.*;
-import com.game.input.KeyInput;
 import com.game.input.rawcomponents.KeyState;
-import com.game.input.rawcomponents.PhysicalAction;
 import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.*;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.*;
-import com.game.util.Observer;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
 
@@ -23,7 +18,7 @@ import java.nio.file.Path;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
-public class Game implements Observer<Input> {
+public class Game implements EventObserver {
     private final static double ONE_SEC_TIME = 1;
     private final static int UPDATES_PER_SECOND = 60;
     private final static double UPDATE_TIME = 1d / UPDATES_PER_SECOND;
@@ -50,7 +45,7 @@ public class Game implements Observer<Input> {
         shouldClose = false;
 
         eventDispatcher = new EventDispatcher();
-        eventDispatcher.addObserver(this::onEvent);
+        eventDispatcher.addObserver(this);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -58,7 +53,6 @@ public class Game implements Observer<Input> {
                 .setHeight(720)
                 .build();
         window.setVsync(false);
-        window.addObserver(this);
 
         renderer = new Renderer(window);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
@@ -167,17 +161,9 @@ public class Game implements Observer<Input> {
     }
 
     @Override
-    public void handle(Input value) {
-        switch (value) {
-            case KeyInput(PhysicalKey key, PhysicalAction action) -> System.out.println("Key pressed: " + key + ", action: " + action);
-            case CloseWindow() -> System.out.println("Close window clicked");
-            default -> { }
-        }
-    }
-
-    private void onEvent(Event event) {
+    public void onEvent(Event event) {
         System.out.println("Event received: " + event);
-        if (event instanceof CloseGameRequestEvent)
+        if (event instanceof CloseGameRequestedEvent)
             shouldClose = true;
     }
 
@@ -185,5 +171,6 @@ public class Game implements Observer<Input> {
         resourceManager.delete();
         renderer.delete();
         window.delete();
+        eventDispatcher.notifyObservers(new GameClosedEvent());
     }
 }

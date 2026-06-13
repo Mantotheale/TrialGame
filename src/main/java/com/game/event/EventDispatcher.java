@@ -1,26 +1,29 @@
 package com.game.event;
 
-import com.game.util.Observable;
-import com.game.util.Observer;
+import java.util.*;
 
-import java.util.HashSet;
-import java.util.Set;
+public class EventDispatcher {
+    private final Set<EventObserver> observers = new HashSet<>();
+    private final Queue<Event> eventQueue = new ArrayDeque<>();
 
-public class EventDispatcher implements Observable<Event> {
-    private final Set<Observer<Event>> observers = new HashSet<>();
-
-    @Override
-    public void addObserver(Observer<Event> observer) {
+    public void addObserver(EventObserver observer) {
         observers.add(observer);
     }
 
-    @Override
-    public void removeObserver(Observer<Event> observer) {
+    public void removeObserver(EventObserver observer) {
         observers.remove(observer);
     }
 
-    @Override
     public void notifyObservers(Event value) {
-        observers.forEach(observer -> observer.handle(value));
+        observers.forEach(observer -> observer.onEvent(value));
+    }
+
+    public void pushEvent(Event event) {
+        eventQueue.add(event);
+    }
+
+    public void dispatchEvents() {
+        while (!eventQueue.isEmpty())
+            notifyObservers(eventQueue.remove());
     }
 }

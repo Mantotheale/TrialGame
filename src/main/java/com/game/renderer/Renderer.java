@@ -1,12 +1,14 @@
 package com.game.renderer;
 
 import com.game.camera.Camera;
+import com.game.event.Event;
+import com.game.event.EventObserver;
+import com.game.event.FrameBufferResizedEvent;
 import com.game.input.Input;
 import com.game.input.ResizeFrameBuffer;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
-import com.game.util.Observer;
 import com.game.window.Window;
 import org.lwjgl.system.MemoryUtil;
 
@@ -16,7 +18,7 @@ import java.util.PriorityQueue;
 
 import static org.lwjgl.opengl.GL20.*;
 
-public class Renderer implements Observer<Input> {
+public class Renderer implements EventObserver {
     private static final int MAX_QUAD_COUNT = 10000;
     private static final int TEXTURE_UNITS = 8;
 
@@ -44,8 +46,6 @@ public class Renderer implements Observer<Input> {
             shaderProgram.setInt("tex[" + i + "]", i);
 
         commandQueue = new PriorityQueue<>();
-
-        window.addObserver(this);
     }
 
     public void beginScene(Camera camera) {
@@ -89,8 +89,8 @@ public class Renderer implements Observer<Input> {
     }
 
     @Override
-    public void handle(Input value) {
-        if (value instanceof ResizeFrameBuffer(int width, int height))
-            setViewport(0, 0, width, height);
+    public void onEvent(Event event) {
+        if (event instanceof FrameBufferResizedEvent(int newWidth, int newHeight))
+            setViewport(0, 0, newWidth, newHeight);
     }
 }

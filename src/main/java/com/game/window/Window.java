@@ -1,11 +1,6 @@
 package com.game.window;
 
-import com.game.input.CloseWindow;
-import com.game.input.Input;
-import com.game.input.KeyInput;
-import com.game.input.ResizeFrameBuffer;
-import com.game.util.Observable;
-import com.game.util.Observer;
+import com.game.input.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -13,9 +8,9 @@ import java.util.Set;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Window implements Observable<Input> {
+public class Window implements InputObservable {
     private final long id;
-    private final Set<Observer<Input>> observers;
+    private final Set<InputObserver> observers;
 
     Window(long id) {
         this.id = id;
@@ -52,19 +47,19 @@ public class Window implements Observable<Input> {
     }
 
     @Override
-    public void addObserver(Observer<Input> observer) {
+    public void addObserver(InputObserver observer) {
         observers.add(observer);
     }
 
     @Override
-    public void removeObserver(Observer<Input> observer) {
+    public void removeObserver(InputObserver observer) {
         observers.remove(observer);
     }
 
     @Override
     public void notifyObservers(Input value) {
-        for (Observer<Input> observer : observers)
-            observer.handle(value);
+        for (InputObserver observer : observers)
+            observer.onInput(value);
     }
 
     private void keyCallback(long _window, int key, int _scancode, int action, int _mods) {
