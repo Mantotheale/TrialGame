@@ -2,6 +2,9 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
+import com.game.event.CloseGameRequestEvent;
+import com.game.event.Event;
+import com.game.event.EventDispatcher;
 import com.game.input.*;
 import com.game.input.KeyInput;
 import com.game.input.rawcomponents.KeyState;
@@ -25,10 +28,13 @@ public class Game implements Observer<Input> {
     private final static int UPDATES_PER_SECOND = 60;
     private final static double UPDATE_TIME = 1d / UPDATES_PER_SECOND;
 
+    private boolean shouldClose;
+
     private final Window window;
     private final Renderer renderer;
     private final InputManager inputManager;
     private final ResourceManager resourceManager;
+    private final EventDispatcher eventDispatcher;
 
     private Transform2D transform1;
     private final TileMap map;
@@ -41,6 +47,11 @@ public class Game implements Observer<Input> {
     public Game() {
         System.out.println("My first game!");
 
+        shouldClose = false;
+
+        eventDispatcher = new EventDispatcher();
+        eventDispatcher.addObserver(this::onEvent);
+
         window = new WindowBuilder()
                 .setTitle("Hello World!")
                 .setWidth(720)
@@ -52,7 +63,7 @@ public class Game implements Observer<Input> {
         renderer = new Renderer(window);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
-        inputManager = new InputManager(window);
+        inputManager = new InputManager(window, eventDispatcher);
 
         resourceManager = new ResourceManager(Path.of("src/main/resources/atlases"));
 
@@ -152,7 +163,7 @@ public class Game implements Observer<Input> {
     }
 
     private boolean shouldClose() {
-        return inputManager.keyState(PhysicalKey.ESCAPE) == KeyState.DOWN || window.shouldClose();
+        return shouldClose;
     }
 
     @Override
@@ -162,6 +173,12 @@ public class Game implements Observer<Input> {
             case CloseWindow() -> System.out.println("Close window clicked");
             default -> { }
         }
+    }
+
+    private void onEvent(Event event) {
+        System.out.println("Event received: " + event);
+        if (event instanceof CloseGameRequestEvent)
+            shouldClose = true;
     }
 
     private void terminate() {
