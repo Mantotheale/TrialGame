@@ -35,9 +35,8 @@ public class InputManager implements InputObserver {
         }
 
         switch (input) {
-            // CHANGE WITH PUSH!
-            case CloseWindow() -> eventDispatcher.notifyObservers(new CloseGameRequestedEvent());
-            case KeyInput(PhysicalKey key, _) when key == PhysicalKey.ESCAPE -> eventDispatcher.notifyObservers(new CloseGameRequestedEvent());
+            case CloseWindow() -> eventDispatcher.pushEvent(new CloseGameRequestedEvent());
+            case KeyInput(PhysicalKey key, _) when key == PhysicalKey.ESCAPE -> eventDispatcher.pushEvent(new CloseGameRequestedEvent());
             default -> {}
         }
     }

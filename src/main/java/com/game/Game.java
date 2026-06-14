@@ -18,10 +18,10 @@ import java.nio.file.Path;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
-public class Game implements EventObserver {
+public class Game {
     private final static double ONE_SEC_TIME = 1;
     private final static int UPDATES_PER_SECOND = 60;
-    private final static double UPDATE_TIME = 1d / UPDATES_PER_SECOND;
+    public final static double UPDATE_TIME = ONE_SEC_TIME / UPDATES_PER_SECOND;
 
     private boolean shouldClose;
 
@@ -45,7 +45,8 @@ public class Game implements EventObserver {
         shouldClose = false;
 
         eventDispatcher = new EventDispatcher();
-        eventDispatcher.addObserver(this);
+        eventDispatcher.addObserver(this::onCloseGameRequest);
+        eventDispatcher.addObserver(this::onStartUpdate);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -54,7 +55,7 @@ public class Game implements EventObserver {
                 .build();
         window.setVsync(false);
 
-        renderer = new Renderer(window);
+        renderer = new Renderer();
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
         inputManager = new InputManager(window, eventDispatcher);
@@ -66,8 +67,10 @@ public class Game implements EventObserver {
 
         camera = new Camera(
                 new CameraProjection.Orthographic(-7, 7, -7, 7, 0.01f, 20),
-                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D())
+                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D()),
+                inputManager
         );
+        eventDispatcher.addObserver(camera);
 
         transform1 = new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2);
         map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager);
@@ -103,36 +106,17 @@ public class Game implements EventObserver {
 
     private void processInputs() {
         glfwPollEvents();
+        eventDispatcher.dispatchEvents();
     }
 
     private void update() {
         updates++;
 
-        if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN) {
-            transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME);
-        }
-        if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN) {
-            transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME);
-        }
-        if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN) {
-            transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0);
-        }
-        if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN) {
-            transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0);
-        }
+        eventDispatcher.pushEvent(new StartUpdateEvent());
+        eventDispatcher.dispatchEvents();
 
-        if (inputManager.keyState(PhysicalKey.UP) == KeyState.DOWN) {
-            camera.move(new Translation3D(0, 2 * (float) UPDATE_TIME, 0));
-        }
-        if (inputManager.keyState(PhysicalKey.DOWN) == KeyState.DOWN) {
-            camera.move(new Translation3D(0, -2 * (float) UPDATE_TIME, 0));
-        }
-        if (inputManager.keyState(PhysicalKey.LEFT) == KeyState.DOWN) {
-            camera.move(new Translation3D(-2 * (float) UPDATE_TIME, 0, 0));
-        }
-        if (inputManager.keyState(PhysicalKey.RIGHT) == KeyState.DOWN) {
-            camera.move(new Translation3D(2 * (float) UPDATE_TIME, 0, 0));
-        }
+        eventDispatcher.pushEvent(new EndUpdateEvent());
+        eventDispatcher.dispatchEvents();
     }
 
     private void oneSecUpdate() {
@@ -160,17 +144,37 @@ public class Game implements EventObserver {
         return shouldClose;
     }
 
-    @Override
-    public void onEvent(Event event) {
-        System.out.println("Event received: " + event);
+    public void onCloseGameRequest(Event event) {
+        //System.out.println("Event received: " + event);
         if (event instanceof CloseGameRequestedEvent)
             shouldClose = true;
+    }
+
+    public void onStartUpdate(Event event) {
+        //System.out.println("Event received: " + event);
+        if (event instanceof StartUpdateEvent) {
+            if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN) {
+                transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME);
+            }
+            if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN) {
+                transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME);
+            }
+            if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN) {
+                transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0);
+            }
+            if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN) {
+                transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0);
+            }
+
+
+        }
     }
 
     private void terminate() {
         resourceManager.delete();
         renderer.delete();
         window.delete();
-        eventDispatcher.notifyObservers(new GameClosedEvent());
+        eventDispatcher.pushEvent(new GameClosedEvent());
+        eventDispatcher.dispatchEvents();
     }
 }

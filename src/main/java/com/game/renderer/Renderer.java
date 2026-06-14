@@ -4,12 +4,9 @@ import com.game.camera.Camera;
 import com.game.event.Event;
 import com.game.event.EventObserver;
 import com.game.event.FrameBufferResizedEvent;
-import com.game.input.Input;
-import com.game.input.ResizeFrameBuffer;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
-import com.game.window.Window;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
@@ -27,7 +24,7 @@ public class Renderer implements EventObserver {
     private final ShaderProgram shaderProgram;
     private Camera camera;
 
-    public Renderer(Window window) {
+    public Renderer() {
         VertexLayout vertexLayout = new VertexLayout.Builder()
                 .pushFloats(2)
                 .pushInts(1)
