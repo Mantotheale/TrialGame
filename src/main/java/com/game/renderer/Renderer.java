@@ -2,6 +2,7 @@ package com.game.renderer;
 
 import com.game.camera.Camera;
 import com.game.event.Event;
+import com.game.event.EventDispatcher;
 import com.game.event.EventObserver;
 import com.game.event.FrameBufferResizedEvent;
 import com.game.renderer.shader.ShaderProgram;
@@ -86,7 +87,7 @@ public class Renderer implements EventObserver {
     }
 
     @Override
-    public void onEvent(Event event) {
+    public void onEvent(EventDispatcher dispatcher, Event event) {
         if (event instanceof FrameBufferResizedEvent(int newWidth, int newHeight))
             setViewport(0, 0, newWidth, newHeight);
     }

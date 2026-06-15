@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class TileMap implements Iterable<RenderComponent> {
-    List<RenderComponent> tiles;
+    private final List<RenderComponent> tiles;
 
     public TileMap(List<RenderComponent> tiles) {
         this.tiles = new ArrayList<>(tiles);

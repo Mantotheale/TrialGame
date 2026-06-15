@@ -4,8 +4,6 @@ import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
 import com.game.event.*;
 import com.game.input.*;
-import com.game.input.rawcomponents.KeyState;
-import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.*;
 import com.game.resourcemanager.ResourceManager;
@@ -31,13 +29,15 @@ public class Game {
     private final ResourceManager resourceManager;
     private final EventDispatcher eventDispatcher;
 
-    private Transform2D transform1;
+    private final Entity reshiram;
+    private final Entity mewtwo;
     private final TileMap map;
 
     private final Camera camera;
 
     private int updates;
     private int frames;
+    private int elapsedSeconds;
 
     public Game() {
         System.out.println("My first game!");
@@ -46,7 +46,6 @@ public class Game {
 
         eventDispatcher = new EventDispatcher();
         eventDispatcher.addObserver(this::onCloseGameRequest);
-        eventDispatcher.addObserver(this::onStartUpdate);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -67,16 +66,27 @@ public class Game {
 
         camera = new Camera(
                 new CameraProjection.Orthographic(-7, 7, -7, 7, 0.01f, 20),
-                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D()),
-                inputManager
+                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D())
         );
         eventDispatcher.addObserver(camera);
 
-        transform1 = new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2);
         map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager);
+
+        reshiram = new Player(
+                new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),
+                resourceManager.getTexture(Tile.RESHIRAM),
+                inputManager
+        );
+        eventDispatcher.addObserver((Player) reshiram);
+
+        mewtwo = new Entity(
+                new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
+                resourceManager.getTexture(Tile.MEWTWO)
+        );
 
         updates = 0;
         frames = 0;
+        elapsedSeconds = 0;
     }
 
     public void run() {
@@ -124,6 +134,13 @@ public class Game {
         System.out.println("FPS: " + frames);
         updates = 0;
         frames = 0;
+        elapsedSeconds++;
+
+        eventDispatcher.pushEvent(new StartOneSecUpdateEvent());
+        eventDispatcher.dispatchEvents();
+
+        eventDispatcher.pushEvent(new EndOneSecUpdateEvent());
+        eventDispatcher.dispatchEvents();
     }
 
     private void render() {
@@ -131,7 +148,8 @@ public class Game {
 
         renderer.beginScene(camera);
 
-        renderer.submit(transform1, resourceManager.getTexture(Tile.RESHIRAM));
+        renderer.submit(reshiram.transform, reshiram.texture);
+        renderer.submit(mewtwo.transform, mewtwo.texture);
         for (RenderComponent component: map)
             renderer.submit(component.transform(), component.texture());
 
@@ -144,29 +162,10 @@ public class Game {
         return shouldClose;
     }
 
-    public void onCloseGameRequest(Event event) {
-        //System.out.println("Event received: " + event);
-        if (event instanceof CloseGameRequestedEvent)
+    public void onCloseGameRequest(EventDispatcher dispatcher, Event event) {
+        if (event instanceof CloseGameRequestedEvent) {
+            System.out.println("Event received: " + event);
             shouldClose = true;
-    }
-
-    public void onStartUpdate(Event event) {
-        //System.out.println("Event received: " + event);
-        if (event instanceof StartUpdateEvent) {
-            if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN) {
-                transform1 = transform1.translate(0, 1 * (float) UPDATE_TIME);
-            }
-            if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN) {
-                transform1 = transform1.translate(0, -1 * (float) UPDATE_TIME);
-            }
-            if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN) {
-                transform1 = transform1.translate(-1 * (float) UPDATE_TIME, 0);
-            }
-            if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN) {
-                transform1 = transform1.translate(1 * (float) UPDATE_TIME, 0);
-            }
-
-
         }
     }
 

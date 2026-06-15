@@ -4,6 +4,7 @@ import java.nio.file.Path;
 
 public enum Tile {
     RESHIRAM("reshiram.png"),
+    MEWTWO("mewtwo.png"),
     GRASS("grass.png"),
     WATER("water.png"),
     LAKE_BOTTOM("lake_bottom.png"),

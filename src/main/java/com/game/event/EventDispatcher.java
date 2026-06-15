@@ -46,7 +46,7 @@ public class EventDispatcher {
 
     private void notifyObservers(Event value) {
         isNotifyingObservers = true;
-        currentObservers.forEach(observer -> observer.onEvent(value));
+        currentObservers.forEach(observer -> observer.onEvent(this, value));
         isNotifyingObservers = false;
 
         while (!pendingOperations.isEmpty())
