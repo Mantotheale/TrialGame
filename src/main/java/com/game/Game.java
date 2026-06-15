@@ -18,7 +18,7 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Game {
     private final static double ONE_SEC_TIME = 1;
-    private final static int UPDATES_PER_SECOND = 60;
+    public final static int UPDATES_PER_SECOND = 60;
     public final static double UPDATE_TIME = ONE_SEC_TIME / UPDATES_PER_SECOND;
 
     private boolean shouldClose;

@@ -6,26 +6,24 @@ public class EventDispatcher {
     private final Set<EventObserver> currentObservers;
     private final Queue<Event> eventQueue;
     private boolean isDispatchingEvents;
-    private boolean isNotifyingObservers;
     private final Queue<PendingOperation> pendingOperations;
 
     public EventDispatcher() {
         this.currentObservers = new HashSet<>();
         this.eventQueue = new ArrayDeque<>();
         this.isDispatchingEvents = false;
-        this.isNotifyingObservers = false;
         this.pendingOperations = new ArrayDeque<>();
     }
 
     public void addObserver(EventObserver observer) {
-        if (isNotifyingObservers)
+        if (isDispatchingEvents)
             pendingOperations.add(new PendingOperation.Add(observer));
         else
             currentObservers.add(observer);
     }
 
     public void removeObserver(EventObserver observer) {
-        if (isNotifyingObservers)
+        if (isDispatchingEvents)
             pendingOperations.add(new PendingOperation.Remove(observer));
         else
             currentObservers.remove(observer);
@@ -45,9 +43,7 @@ public class EventDispatcher {
     }
 
     private void notifyObservers(Event value) {
-        isNotifyingObservers = true;
         currentObservers.forEach(observer -> observer.onEvent(this, value));
-        isNotifyingObservers = false;
 
         while (!pendingOperations.isEmpty())
             switch (pendingOperations.remove()) {
