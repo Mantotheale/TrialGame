@@ -18,7 +18,8 @@ public enum Tile {
     LAKE_FULL("lake_full.png"),
     BROKEN_WALL("broken_wall.png"),
     WALLED_WATER("walled_water.png"),
-    WALLED_WATER_SOURCE("walled_water_source.png"),;
+    WALLED_WATER_SOURCE("walled_water_source.png"),
+    BULLET("bullet.png");
 
     private final static Path TILES_BASE_PATH = Path.of("src/main/resources/tiles");
 

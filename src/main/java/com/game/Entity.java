@@ -1,9 +1,10 @@
 package com.game;
 
+import com.game.event.EventObserver;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
 
-public class Entity {
+public abstract class Entity implements EventObserver {
     protected Transform2D transform;
     protected Texture texture;
 

@@ -46,6 +46,7 @@ public class Game {
 
         eventDispatcher = new EventDispatcher();
         eventDispatcher.addObserver(this::onCloseGameRequest);
+        eventDispatcher.addObserver(this::onRenderRequested);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -72,17 +73,19 @@ public class Game {
 
         map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager);
 
-        reshiram = new Player(
+        reshiram = new Reshiram(
                 new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),
                 resourceManager.getTexture(Tile.RESHIRAM),
                 inputManager
         );
-        eventDispatcher.addObserver((Player) reshiram);
+        eventDispatcher.addObserver(reshiram);
 
-        mewtwo = new Entity(
+        mewtwo = new MewTwo(
                 new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
-                resourceManager.getTexture(Tile.MEWTWO)
+                resourceManager.getTexture(Tile.MEWTWO),
+                resourceManager
         );
+        eventDispatcher.addObserver(mewtwo);
 
         updates = 0;
         frames = 0;
@@ -148,10 +151,8 @@ public class Game {
 
         renderer.beginScene(camera);
 
-        renderer.submit(reshiram.transform, reshiram.texture);
-        renderer.submit(mewtwo.transform, mewtwo.texture);
-        for (RenderComponent component: map)
-            renderer.submit(component.transform(), component.texture());
+        eventDispatcher.pushEvent(new RenderRequestEvent(renderer));
+        eventDispatcher.dispatchEvents();
 
         renderer.endScene();
 
@@ -160,6 +161,13 @@ public class Game {
 
     private boolean shouldClose() {
         return shouldClose;
+    }
+
+    public void onRenderRequested(EventDispatcher dispatcher, Event event) {
+        if (event instanceof RenderRequestEvent(Renderer r)) {
+            for (RenderComponent component: map)
+                r.submit(component.transform(), component.texture());
+        }
     }
 
     public void onCloseGameRequest(EventDispatcher dispatcher, Event event) {
