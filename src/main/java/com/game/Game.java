@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
+import com.game.collision.CollisionManager;
 import com.game.event.*;
 import com.game.input.*;
 import com.game.renderer.Renderer;
@@ -28,6 +29,7 @@ public class Game {
     private final InputManager inputManager;
     private final ResourceManager resourceManager;
     private final EventDispatcher eventDispatcher;
+    private final CollisionManager collisionManager;
 
     private final Entity reshiram;
     private final Entity mewtwo;
@@ -71,19 +73,24 @@ public class Game {
         );
         eventDispatcher.addObserver(camera);
 
+        collisionManager = new CollisionManager();
+        eventDispatcher.addObserver(collisionManager);
+
         map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager);
 
         reshiram = new Reshiram(
                 new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),
                 resourceManager.getTexture(Tile.RESHIRAM),
-                inputManager
+                inputManager,
+                collisionManager
         );
         eventDispatcher.addObserver(reshiram);
 
         mewtwo = new MewTwo(
                 new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
                 resourceManager.getTexture(Tile.MEWTWO),
-                resourceManager
+                resourceManager,
+                collisionManager
         );
         eventDispatcher.addObserver(mewtwo);
 
@@ -126,6 +133,9 @@ public class Game {
         updates++;
 
         eventDispatcher.pushEvent(new StartUpdateEvent());
+        eventDispatcher.dispatchEvents();
+
+        collisionManager.findCollisions(eventDispatcher);
         eventDispatcher.dispatchEvents();
 
         eventDispatcher.pushEvent(new EndUpdateEvent());

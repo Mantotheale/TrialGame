@@ -7,6 +7,10 @@ public record Translation2D(float x, float y) {
         return new Vec2f(vec.x() + x, vec.y() + y);
     }
 
+    public Vec2f toVec2f() {
+        return new Vec2f(x, y);
+    }
+
     public Translation2D compose(Translation2D other) {
         return new Translation2D(x + other.x, y + other.y);
     }
