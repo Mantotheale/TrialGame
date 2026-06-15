@@ -9,7 +9,6 @@ import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
-import com.game.util.Vec2f;
 
 public class Reshiram extends Entity implements EventObserver {
     private final InputManager inputManager;
@@ -19,14 +18,7 @@ public class Reshiram extends Entity implements EventObserver {
         super(transform, texture);
         collisionManager.addCollider(
                 this,
-                new Collider(
-                        new Vec2f(
-                                transform.translation().x(),
-                                transform.translation().y()
-                        ),
-                        transform.scale().x(),
-                        transform.scale().y()
-                )
+                new Collider(transform.translation().toVec2f(), transform.scale().compose(0.8f).toVec2f())
         );
     }
 
@@ -54,7 +46,7 @@ public class Reshiram extends Entity implements EventObserver {
                 }
 
                 if (hasMoved)
-                    dispatcher.pushEvent(new EntityMovedEvent(this, new Vec2f(transform.translation().x(), transform.translation().y())));
+                    dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
             }
             case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
             case CollisionEvent(Entity e1, Entity e2, Collider c1, Collider c2) when e1.equals(this) -> {

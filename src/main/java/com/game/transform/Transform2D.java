@@ -14,4 +14,8 @@ public record Transform2D(Translation2D translation, Scale2D scale, int zIndex) 
     public Transform2D translate(float x, float y) {
         return new Transform2D(this.translation.compose(x, y), scale, zIndex);
     }
+
+    public Transform2D scale(float s) {
+        return new Transform2D(translation, scale.compose(s), zIndex);
+    }
 }

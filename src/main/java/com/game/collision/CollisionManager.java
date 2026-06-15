@@ -23,35 +23,18 @@ public class CollisionManager implements EventObserver {
     }
 
     public void findCollisions(EventDispatcher dispatcher) {
-        //System.out.println("CONTROLLO COLLISIONI" + colliders);
         for (Map.Entry<Entity, Collider> entry1: colliders.entrySet()) {
             Entity entity1 = entry1.getKey();
             Collider collider1 = entry1.getValue();
-            Vec2f c1 = collider1.center();
-            float w1 = collider1.width() / 2;
-            float h1 = collider1.height() / 2;
 
             colliders.entrySet().stream()
                     .filter(entry2 -> !entry2.getKey().equals(entity1))
-                    .filter(entry2 -> {
-                        Collider collider2 = entry2.getValue();
-                        Vec2f c2 = collider2.center();
-                        float w2 = collider2.width() / 2;
-                        float h2 = collider2.height() / 2;
-
-                        if (c2.x() + w2 < c1.x() - w1) return false;
-                        if (c2.x() - w2 > c1.x() + w1) return false;
-                        if (c2.y() - h2 > c1.y() + h1) return false;
-                        return !(c2.y() + h2 < c1.y() - h1);
-                    })
-                    .forEach(entry2 -> dispatcher.pushEvent(
-                            new CollisionEvent(
-                                    entity1,
-                                    entry2.getKey(),
-                                    collider1,
-                                    entry2.getValue()
+                    .filter(entry2 -> areColliding(collider1, entry2.getValue()))
+                    .forEach(entry2 ->
+                            dispatcher.pushEvent(
+                                new CollisionEvent(entity1, entry2.getKey(), collider1, entry2.getValue())
                             )
-                    ));
+                    );
         }
     }
 
@@ -65,5 +48,20 @@ public class CollisionManager implements EventObserver {
                             new Collider(position, collider.width(), collider.height())
             );
         }
+    }
+
+    private static boolean areColliding(Collider collider1, Collider collider2) {
+        Vec2f c1 = collider1.center();
+        float w1 = collider1.width() / 2;
+        float h1 = collider1.height() / 2;
+
+        Vec2f c2 = collider2.center();
+        float w2 = collider2.width() / 2;
+        float h2 = collider2.height() / 2;
+
+        if (c2.x() + w2 < c1.x() - w1) return false;
+        if (c2.x() - w2 > c1.x() + w1) return false;
+        if (c2.y() - h2 > c1.y() + h1) return false;
+        return !(c2.y() + h2 < c1.y() - h1);
     }
 }

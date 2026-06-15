@@ -9,7 +9,6 @@ import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
 import com.game.transform.Transform2D;
-import com.game.util.Vec2f;
 
 public class MewTwo extends Entity {
     private int frames;
@@ -20,14 +19,7 @@ public class MewTwo extends Entity {
         this.resourceManager = resourceManager;
         collisionManager.addCollider(
                 this,
-                new Collider(
-                        new Vec2f(
-                                transform.translation().x(),
-                                transform.translation().y()
-                        ),
-                        transform.scale().x(),
-                        transform.scale().y()
-                )
+                new Collider(transform.translation().toVec2f(), transform.scale().compose(0.8f).toVec2f())
         );
         frames = 0;
     }

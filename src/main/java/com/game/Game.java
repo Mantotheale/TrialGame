@@ -76,7 +76,7 @@ public class Game {
         collisionManager = new CollisionManager();
         eventDispatcher.addObserver(collisionManager);
 
-        map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager);
+        map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager, collisionManager);
 
         reshiram = new Reshiram(
                 new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),

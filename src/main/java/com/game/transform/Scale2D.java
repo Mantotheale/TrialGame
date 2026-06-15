@@ -7,6 +7,18 @@ public record Scale2D(float x, float y) {
         this(s, s);
     }
 
+    public Vec2f toVec2f() {
+        return new Vec2f(x, y);
+    }
+
+    public Scale2D compose(float sx, float sy) {
+        return new Scale2D(x * sx, y * sy);
+    }
+
+    public Scale2D compose(float s) {
+        return compose(s, s);
+    }
+
     public Vec2f transform(Vec2f vec) {
         return new Vec2f(vec.x() * x, vec.y() * y);
     }
