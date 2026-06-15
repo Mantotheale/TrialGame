@@ -1,13 +1,14 @@
 package com.game.camera;
 
 import com.game.Entity;
+import com.game.Reshiram;
 import com.game.event.EntityMovedEvent;
 import com.game.event.Event;
 import com.game.event.EventDispatcher;
 import com.game.event.EventObserver;
-import com.game.transform.Transform2D;
 import com.game.transform.Transform3D;
 import com.game.transform.Translation3D;
+import com.game.util.Vec2f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -39,17 +40,18 @@ public class Camera implements EventObserver {
 
     @Override
     public void onEvent(EventDispatcher dispatcher, Event event) {
-        if (event instanceof EntityMovedEvent(Entity entity)) {
-            Transform2D transform = entity.transform();
-            transform3d = new Transform3D(
-                    new Translation3D(
-                            transform.translation().x(),
-                            transform.translation().y(),
-                            transform3d.translation3d().z()
-                    ),
-                    transform3d.rotation3D(),
-                    transform3d.scale3D()
-            );
+        if (event instanceof EntityMovedEvent(Entity entity, Vec2f position)) {
+            if (entity instanceof Reshiram) {
+                transform3d = new Transform3D(
+                        new Translation3D(
+                                position.x(),
+                                position.y(),
+                                transform3d.translation3d().z()
+                        ),
+                        transform3d.rotation3D(),
+                        transform3d.scale3D()
+                );
+            }
         }
     }
 }

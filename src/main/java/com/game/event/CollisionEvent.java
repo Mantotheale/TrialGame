@@ -1,6 +1,6 @@
 package com.game.event;
 
 import com.game.Entity;
-import com.game.collision.Collider;
+import com.game.util.Vec2f;
 
-public record CollisionEvent(Entity e1, Entity e2, Collider c1, Collider c2) implements Event { }
+public record CollisionEvent(Entity e1, Entity e2, Vec2f minimumTranslationVector) implements Event { }

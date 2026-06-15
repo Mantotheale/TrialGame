@@ -1,7 +1,7 @@
 package com.game;
 
-import com.game.collision.Collider;
 import com.game.collision.CollisionManager;
+import com.game.collision.RectangleCollider;
 import com.game.event.*;
 import com.game.input.InputManager;
 import com.game.input.rawcomponents.KeyState;
@@ -9,6 +9,7 @@ import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
+import com.game.util.Vec2f;
 
 public class Reshiram extends Entity implements EventObserver {
     private final InputManager inputManager;
@@ -18,7 +19,11 @@ public class Reshiram extends Entity implements EventObserver {
         super(transform, texture);
         collisionManager.addCollider(
                 this,
-                new Collider(transform.translation().toVec2f(), transform.scale().compose(0.8f).toVec2f())
+                new RectangleCollider(
+                        transform.translation().toVec2f(),
+                        transform.scale().compose(0.8f).toVec2f(),
+                        true
+                )
         );
     }
 
@@ -49,24 +54,11 @@ public class Reshiram extends Entity implements EventObserver {
                     dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
             }
             case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
-            case CollisionEvent(Entity e1, Entity e2, Collider c1, Collider c2) when e1.equals(this) -> {
-                System.out.println("Collision!");
-                float xOverlap = ((c1.width() + c2.width()) / 2) - Math.abs(c1.center().x() - c2.center().x());
-                float yOverlap = ((c1.height() + c2.height()) / 2) - Math.abs(c1.center().y() - c2.center().y());
-
-                if (xOverlap < yOverlap) {
-                    if (c1.center().x() < c2.center().x())
-                        transform = transform.translate(-xOverlap, 0);
-                    else
-                        transform = transform.translate(xOverlap, 0);
-                } else {
-                    if (c1.center().y() < c2.center().y())
-                        transform = transform.translate(0, -yOverlap);
-                    else
-                        transform = transform.translate(0, yOverlap);
-                }
-
-                dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
+            case CollisionEvent(Entity e1, Entity e2, Vec2f minimumTranslationVector) when e1.equals(this) -> {
+                System.out.println("Collision with " + e2 + "!");
+                transform = transform.translate(minimumTranslationVector);
+                if (!minimumTranslationVector.equals(Vec2f.ZERO))
+                    dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
             }
             default -> { }
         }

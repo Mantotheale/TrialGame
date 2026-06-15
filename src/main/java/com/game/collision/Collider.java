@@ -2,8 +2,11 @@ package com.game.collision;
 
 import com.game.util.Vec2f;
 
-public record Collider(Vec2f center, float width, float height) {
-    public Collider(Vec2f center, Vec2f dimensions) {
-        this(center, dimensions.x(), dimensions.y());
-    }
+import java.util.Optional;
+
+public sealed interface Collider permits RectangleCollider {
+    Collider moveToPosition(Vec2f position);
+    boolean intersects(Collider other);
+    Optional<Vec2f> minimumTranslationVector(Collider other);
+    boolean isMobile();
 }

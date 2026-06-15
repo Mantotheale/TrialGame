@@ -21,11 +21,12 @@ public class Bullet extends Entity {
         switch (event) {
             case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
             case StartUpdateEvent() -> {
-                transform = transform.translate(-1 * (float) UPDATE_TIME, 0);
-
                 elapsedUpdates++;
                 if (elapsedUpdates == 5 * UPDATES_PER_SECOND) {
                     dispatcher.removeObserver(this);
+                } else {
+                    transform = transform.translate(-1 * (float) UPDATE_TIME, 0);
+                    dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
                 }
             }
             default -> { }
