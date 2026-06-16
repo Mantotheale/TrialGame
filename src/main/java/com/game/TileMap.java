@@ -30,7 +30,6 @@ public class TileMap implements Iterable<RenderComponent> {
                 .filter(l -> !l.isBlank())
                 .map(l -> l.split(" "))
                 .map(fields -> {
-                    System.out.println(Arrays.toString(fields));
                     float x = Float.parseFloat(fields[0]);
                     float y = Float.parseFloat(fields[1]);
                     float scaleX = Float.parseFloat(fields[2]);

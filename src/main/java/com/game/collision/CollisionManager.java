@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class CollisionManager implements EventObserver {
     private final Map<Entity, Collider> colliders;
+    private int frameCount = 0;
 
     public CollisionManager() {
         colliders = new HashMap<>();
@@ -23,6 +24,7 @@ public class CollisionManager implements EventObserver {
     }
 
     public void findCollisions(EventDispatcher dispatcher) {
+        frameCount++;
         colliders.entrySet().stream()
                 .filter(e -> e.getValue().isMobile())
                 .forEach(e1 -> colliders.entrySet().stream()
@@ -33,7 +35,7 @@ public class CollisionManager implements EventObserver {
 
     private void handlePotentialCollision(EventDispatcher dispatcher, Map.Entry<Entity, Collider> e1, Map.Entry<Entity, Collider> e2) {
         e1.getValue().minimumTranslationVector(e2.getValue())
-                .ifPresent(mtv -> dispatcher.pushEvent(new CollisionEvent(e1.getKey(), e2.getKey(), mtv)));
+                .ifPresent(mtv -> { System.out.println("Frame " + frameCount + ", Vec: " + mtv + ", E1: " + e1 + ", E2: " + e2); dispatcher.pushEvent(new CollisionEvent(e1.getKey(), e2.getKey(), mtv));} );
     }
 
     @Override

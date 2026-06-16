@@ -28,7 +28,6 @@ public class InputManager implements InputObserver {
     @Override
     public void onInput(Input input) {
         if (input instanceof KeyInput(PhysicalKey key, PhysicalAction action)) {
-            System.out.println(input);
             switch (action) {
                 case PRESS -> keyStates[key.ordinal()] = KeyState.DOWN;
                 case RELEASE -> keyStates[key.ordinal()] = KeyState.UP;

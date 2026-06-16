@@ -182,7 +182,6 @@ public class Game {
 
     public void onCloseGameRequest(EventDispatcher dispatcher, Event event) {
         if (event instanceof CloseGameRequestedEvent) {
-            System.out.println("Event received: " + event);
             shouldClose = true;
         }
     }

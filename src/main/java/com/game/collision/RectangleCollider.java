@@ -33,6 +33,10 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
             float xOverlap = (width + w2) / 2 - Math.abs(center.x() - c2.x());
             float yOverlap = (height + h2) / 2 - Math.abs(center.y() - c2.y());
 
+            if (Math.abs(xOverlap) <= Collider.EPSILON || Math.abs(yOverlap) <= Collider.EPSILON)
+                return Optional.empty();
+            System.out.println(xOverlap + " " + yOverlap);
+
             if (xOverlap < yOverlap) {
                 if (center.x() < c2.x()) return Optional.of(new Vec2f(-xOverlap, 0));
                 else return Optional.of(new Vec2f(xOverlap, 0));

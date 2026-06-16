@@ -31,7 +31,6 @@ public class MewTwo extends Entity {
                 frames++;
 
                 if (frames == 60) {
-                    System.out.println("Fire!");
                     Bullet bullet = new Bullet(
                             new Transform2D(
                                     transform.translate(-1, 0).translation(),

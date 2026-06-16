@@ -13,6 +13,7 @@ import com.game.util.Vec2f;
 
 public class Reshiram extends Entity implements EventObserver {
     private final InputManager inputManager;
+    private final float movementSpeed = 10f * (float) Game.UPDATE_TIME;
 
     public Reshiram(Transform2D transform, Texture texture, InputManager inputManager, CollisionManager collisionManager) {
         this.inputManager = inputManager;
@@ -31,33 +32,29 @@ public class Reshiram extends Entity implements EventObserver {
     public void onEvent(EventDispatcher dispatcher, Event event) {
         switch (event) {
             case StartUpdateEvent() -> {
-                boolean hasMoved = false;
+                Vec2f acc = Vec2f.ZERO;
+                if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN)
+                    acc = acc.add(Vec2f.UP);
+                if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN)
+                    acc = acc.add(Vec2f.DOWN);
+                if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN)
+                    acc = acc.add(Vec2f.LEFT);
+                if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN)
+                    acc = acc.add(Vec2f.RIGHT);
 
-                if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN) {
-                    transform = transform.translate(0, 1 * (float) Game.UPDATE_TIME);
-                    hasMoved = true;
-                }
-                if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN) {
-                    transform = transform.translate(0, -1 * (float) Game.UPDATE_TIME);
-                    hasMoved = true;
-                }
-                if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN) {
-                    transform = transform.translate(-1 * (float) Game.UPDATE_TIME, 0);
-                    hasMoved = true;
-                }
-                if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN) {
-                    transform = transform.translate(1 * (float) Game.UPDATE_TIME, 0);
-                    hasMoved = true;
-                }
-
-                if (hasMoved)
+                if (!acc.equals(Vec2f.ZERO)) {
+                    transform = transform.translate(acc.normalize().mul(movementSpeed));
                     dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
+                }
             }
-            case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
+            case RenderRequestEvent(Renderer renderer) -> {
+                System.out.println(transform);
+                renderer.submit(transform, texture);
+            }
             case CollisionEvent(Entity e1, Entity e2, Vec2f minimumTranslationVector) when e1.equals(this) -> {
-                System.out.println("Collision with " + e2 + "!");
+                //System.out.println("Collision with " + e2 + "!");
                 transform = transform.translate(minimumTranslationVector);
-                if (!minimumTranslationVector.equals(Vec2f.ZERO))
+                //if (!minimumTranslationVector.equals(Vec2f.ZERO))
                     dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
             }
             default -> { }
