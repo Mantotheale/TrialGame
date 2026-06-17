@@ -6,13 +6,14 @@ import com.game.util.Vec2f;
 import java.util.Optional;
 
 public record RectangleCollider(Vec2f center, float width, float height, boolean isMobile) implements Collider {
+
     public RectangleCollider(Vec2f center, Vec2f dimensions, boolean isMobile) {
         this(center, dimensions.x(), dimensions.y(), isMobile);
     }
 
     @Override
     public Collider moveToPosition(Vec2f position) {
-        return new RectangleCollider(position, width, height,  isMobile);
+        return new RectangleCollider(position, width, height, isMobile);
     }
 
     @Override
@@ -23,63 +24,47 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
             if (c2.y() - (h2 / 2) > center.y() + (height / 2)) return false;
             return !(c2.y() + (h2 / 2) < center.y() - (height / 2));
         }
-
         return false;
     }
 
     @Override
-    public float intersectionArea(Collider other) {
-        if (!intersects(other)) return 0;
-
+    public Optional<CollisionAxes> collisionAxes(Collider other) {
+        if (!intersects(other)) return Optional.empty();
         if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
             float xOverlap = (width + w2) / 2 - Math.abs(center.x() - c2.x());
             float yOverlap = (height + h2) / 2 - Math.abs(center.y() - c2.y());
-
-            return xOverlap * yOverlap;
-        } else {
-            throw new IllegalArgumentException("Unknown collider type");
+            return Optional.of(new CollisionAxes(xOverlap, yOverlap));
         }
+        return Optional.empty();
     }
 
     @Override
-    public Optional<Vec2f> minimumTranslationVector(Collider before, Collider other) {
-        if (!intersects(other)) return Optional.empty();
+    public Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other) {
+        return collisionAxes(other).flatMap(axes -> resolveMtv(beforeCenter, other, axes));
+    }
 
+    private Optional<Vec2f> resolveMtv(Vec2f beforeCenter, Collider other, CollisionAxes axes) {
         if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
-            float xOverlap = (width + w2) / 2 - Math.abs(center.x() - c2.x());
-            float yOverlap = (height + h2) / 2 - Math.abs(center.y() - c2.y());
+            float xOverlap = axes.xOverlap();
+            float yOverlap = axes.yOverlap();
 
             if (FloatUtils.areEqualsEps(xOverlap, 0) || FloatUtils.areEqualsEps(yOverlap, 0))
                 return Optional.of(Vec2f.ZERO);
 
-            if (before instanceof RectangleCollider(Vec2f beforeC, _, _, _)) {
-                float beforeXOverlap = (width + w2) / 2 - Math.abs(beforeC.x() - c2.x());
-                float beforeYOverlap = (height + h2) / 2 - Math.abs(beforeC.y() - c2.y());
+            float beforeXOverlap = (width + w2) / 2 - Math.abs(beforeCenter.x() - c2.x());
+            float beforeYOverlap = (height + h2) / 2 - Math.abs(beforeCenter.y() - c2.y());
 
-                if (beforeYOverlap >= FloatUtils.EPSILON) {
-                    if (beforeC.x() < c2.x())
-                        return Optional.of(new Vec2f(-xOverlap, 0));
-                    else
-                        return Optional.of(new Vec2f(xOverlap, 0));
-                } else if (beforeXOverlap >= FloatUtils.EPSILON) {
-                    if (beforeC.y() < c2.y())
-                        return Optional.of(new Vec2f(0, -yOverlap));
-                    else
-                        return Optional.of(new Vec2f(0, yOverlap));
-                }
+            if (beforeYOverlap >= FloatUtils.EPSILON)
+                return Optional.of(new Vec2f(beforeCenter.x() < c2.x() ? -xOverlap : xOverlap, 0));
 
-                if (xOverlap < yOverlap) {
-                    if (center.x() < c2.x()) return Optional.of(new Vec2f(-xOverlap, 0));
-                    else return Optional.of(new Vec2f(xOverlap, 0));
-                } else {
-                    if (center.y() < c2.y()) return Optional.of(new Vec2f(0, -yOverlap));
-                    else return Optional.of(new Vec2f(0, yOverlap));
-                }
-            } else {
-                throw new IllegalArgumentException("The collider has changed types");
-            }
+            if (beforeXOverlap >= FloatUtils.EPSILON)
+                return Optional.of(new Vec2f(0, beforeCenter.y() < c2.y() ? -yOverlap : yOverlap));
+
+            if (xOverlap < yOverlap)
+                return Optional.of(new Vec2f(center.x() < c2.x() ? -xOverlap : xOverlap, 0));
+            else
+                return Optional.of(new Vec2f(0, center.y() < c2.y() ? -yOverlap : yOverlap));
         }
-
         return Optional.empty();
     }
 }

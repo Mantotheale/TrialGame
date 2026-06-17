@@ -48,15 +48,10 @@ public class Reshiram extends Entity implements EventObserver {
                     dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
                 }
             }
-            case RenderRequestEvent(Renderer renderer) -> {
-                System.out.println(transform);
-                renderer.submit(transform, texture);
-            }
-            case CollisionEvent(Entity e1, Entity e2, Vec2f minimumTranslationVector) when e1.equals(this) -> {
-                //System.out.println("Collision with " + e2 + "!");
+            case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
+            case CollisionEvent(Entity e, _, Vec2f minimumTranslationVector) when e.equals(this) -> {
                 transform = transform.translate(minimumTranslationVector);
-                //if (!minimumTranslationVector.equals(Vec2f.ZERO))
-                    dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
+                dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
             }
             default -> { }
         }

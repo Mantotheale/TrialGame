@@ -5,21 +5,22 @@ import com.game.event.*;
 import com.game.event.collision.CollisionEvent;
 import com.game.util.Vec2f;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import java.util.*;
 public class CollisionManager implements EventObserver {
-    private final Map<Entity, ColliderEvolution> colliders;
-    private int frameCount = 0;
 
-    public CollisionManager() {
-        colliders = new HashMap<>();
+    private record ColliderState(Collider before, Collider after) {
+        ColliderState movedTo(Vec2f position) {
+            return new ColliderState(before, after.moveToPosition(position));
+        }
+        ColliderState evolve() {
+            return new ColliderState(after, after);
+        }
     }
 
+    private final Map<Entity, ColliderState> colliders = new HashMap<>();
+
     public void addCollider(Entity entity, Collider collider) {
-        colliders.put(entity, new ColliderEvolution(collider));
+        colliders.put(entity, new ColliderState(collider, collider));
     }
 
     public void removeCollider(Entity entity) {
@@ -27,65 +28,49 @@ public class CollisionManager implements EventObserver {
     }
 
     public void findCollisions(EventDispatcher dispatcher) {
-        frameCount++;
-        for (Map.Entry<Entity, ColliderEvolution> e1: colliders.entrySet()) {
-            if (!e1.getValue().before.isMobile()) continue;
+        colliders.entrySet().stream()
+                .filter(e -> e.getValue().before().isMobile())
+                .forEach(e -> resolveCollisionsFor(dispatcher, e));
+    }
 
-            List<Map.Entry<Entity, ColliderEvolution>> sortedCollisions = colliders.entrySet().stream()
-                    .filter(e2 -> !e2.getKey().equals(e1.getKey()))
-                    .filter(e2 -> e2.getValue().after.intersects(e1.getValue().after))
-                    .sorted((a, b) -> Float.compare(b.getValue().after.intersectionArea(e1.getValue().after), a.getValue().after.intersectionArea(e1.getValue().after)))
-                    .toList();
+    private void resolveCollisionsFor(EventDispatcher dispatcher, Map.Entry<Entity, ColliderState> entry) {
+        Vec2f beforeCenter = entry.getValue().before().center();
+        Collider resolved = entry.getValue().after();
 
-            Collider updatedCollider = e1.getValue().after;
-            for (Map.Entry<Entity, ColliderEvolution> e2: sortedCollisions) {
-                Optional<Vec2f> optMtv = updatedCollider.minimumTranslationVector(e1.getValue().before, e2.getValue().after);
+        for (var collision : sortedCollisions(resolved)) {
+            Optional<Vec2f> optMtv = resolved.minimumTranslationVector(beforeCenter, collision.getValue().after());
+            if (optMtv.isEmpty()) continue;
 
-                if (optMtv.isPresent()) {
-                    Vec2f mtv = optMtv.get();
-                    System.out.println("Frame " + frameCount + ", Vec: " + mtv + ", E1: " + e1 + ", E2: " + e2);
-                    dispatcher.pushEvent(new CollisionEvent(e1.getKey(), e2.getKey(), mtv));
-
-
-                    if (updatedCollider instanceof RectangleCollider(Vec2f c2, _, _, _)) {
-                        Vec2f updatedPosition = c2.add(mtv);
-                        updatedCollider = updatedCollider.moveToPosition(updatedPosition);
-                    } else {
-                        throw new IllegalStateException("Unknown collider");
-                    }
-                }
-            }
+            Vec2f mtv = optMtv.get();
+            dispatcher.pushEvent(new CollisionEvent(entry.getKey(), collision.getKey(), mtv));
+            resolved = resolved.moveToPosition(resolved.center().add(mtv));
         }
     }
+
+    private List<Map.Entry<Entity, ColliderState>> sortedCollisions(Collider subject) {
+        return colliders.entrySet().stream()
+                .filter(e -> !e.getValue().after().equals(subject))
+                .filter(e -> e.getValue().after().intersects(subject))
+                .sorted(byDecreasingOverlapWith(subject))
+                .toList();
+    }
+
+    private Comparator<Map.Entry<Entity, ColliderState>> byDecreasingOverlapWith(Collider subject) {
+        return Comparator.comparingDouble(e ->
+                -e.getValue().after().collisionAxes(subject)
+                        .map(CollisionAxes::area)
+                        .orElse(0f));
+    }
+
     @Override
     public void onEvent(EventDispatcher dispatcher, Event event) {
         switch (event) {
             case EntityMovedEvent(Entity entity, Vec2f position) -> {
-                ColliderEvolution evolution = colliders.get(entity);
-                if (evolution != null) {
-                    evolution.setAfter(evolution.before.moveToPosition(position));
-                }
+                ColliderState state = colliders.get(entity);
+                if (state != null) colliders.put(entity, state.movedTo(position));
             }
-            case EndUpdateEvent() -> colliders.values().forEach(ColliderEvolution::evolve);
-            default -> { }
-        }
-    }
-
-    private static class ColliderEvolution {
-        public Collider before;
-        public Collider after;
-
-        public ColliderEvolution(Collider before) {
-            this.before = before;
-            this.after = before;
-        }
-
-        public void evolve() {
-            before = after;
-        }
-
-        public void setAfter(Collider after) {
-            this.after = after;
+            case EndUpdateEvent() -> colliders.replaceAll((_, state) -> state.evolve());
+            default -> {}
         }
     }
 }

@@ -7,7 +7,8 @@ import java.util.Optional;
 public sealed interface Collider permits RectangleCollider {
     Collider moveToPosition(Vec2f position);
     boolean intersects(Collider other);
-    float intersectionArea(Collider other);
-    Optional<Vec2f> minimumTranslationVector(Collider before, Collider other);
+    Optional<CollisionAxes> collisionAxes(Collider other);
+    Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other);
     boolean isMobile();
+    Vec2f center();
 }
