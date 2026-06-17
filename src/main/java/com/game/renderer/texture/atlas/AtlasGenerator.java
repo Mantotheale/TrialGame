@@ -76,8 +76,6 @@ public final class AtlasGenerator {
         BufferedImage atlas = new BufferedImage(atlasSize, atlasSize, BufferedImage.TYPE_INT_ARGB);
         List<TileMetadata> metadata = new ArrayList<>();
 
-        Graphics2D g = atlas.createGraphics();
-
         Vec2i pointer = new Vec2i(0, atlasSize);
         int rowHeight = 0;
         while (!tilesWithImages.isEmpty()) {
@@ -90,12 +88,15 @@ public final class AtlasGenerator {
                 rowHeight = 0;
             }
 
-            if (pointer.y() < height) {
-                g.dispose();
+            if (pointer.y() < height)
                 return new ImageAndMetadata(atlas, metadata);
-            }
 
-            g.drawImage(image, pointer.x(), pointer.y() - height, null);
+            for (int x = 0; x < image.getWidth(); x++) {
+                for (int y = 0; y < image.getHeight(); y++) {
+                    int rgb = image.getRGB(x, y);
+                    atlas.setRGB(pointer.x() + x, pointer.y() - height + y, rgb);
+                }
+            }
             Tile tile = tilesWithImages.removeFirst().tile;
             metadata.add(new TileMetadata(tile, pointer.x(), atlasSize - pointer.y(), width, height));
 
@@ -103,7 +104,6 @@ public final class AtlasGenerator {
             rowHeight = Math.max(rowHeight, height);
         }
 
-        g.dispose();
         return new ImageAndMetadata(atlas, metadata);
     }
 
