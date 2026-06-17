@@ -5,10 +5,9 @@ import com.game.util.Vec2f;
 import java.util.Optional;
 
 public sealed interface Collider permits RectangleCollider {
-    float EPSILON = 1e-5f;
-
     Collider moveToPosition(Vec2f position);
     boolean intersects(Collider other);
-    Optional<Vec2f> minimumTranslationVector(Collider other);
+    float intersectionArea(Collider other);
+    Optional<Vec2f> minimumTranslationVector(Collider before, Collider other);
     boolean isMobile();
 }

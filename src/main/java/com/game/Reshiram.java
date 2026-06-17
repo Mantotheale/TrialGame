@@ -3,6 +3,7 @@ package com.game;
 import com.game.collision.CollisionManager;
 import com.game.collision.RectangleCollider;
 import com.game.event.*;
+import com.game.event.collision.CollisionEvent;
 import com.game.input.InputManager;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalKey;
