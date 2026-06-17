@@ -1,7 +1,7 @@
 package com.game;
 
+import com.game.collision.CircleCollider;
 import com.game.collision.CollisionManager;
-import com.game.collision.RectangleCollider;
 import com.game.event.*;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
@@ -19,7 +19,8 @@ public class MewTwo extends Entity {
         this.resourceManager = resourceManager;
         collisionManager.addCollider(
                 this,
-                new RectangleCollider(transform.translation().toVec2f(), transform.scale().compose(0.8f).toVec2f(), false)
+                new CircleCollider(transform.translation().toVec2f(), 0.4f, false)
+                //new RectangleCollider(transform.translation().toVec2f(), transform.scale().compose(0.8f).toVec2f(), false)
         );
         frames = 0;
     }

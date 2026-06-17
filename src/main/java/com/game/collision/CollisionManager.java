@@ -37,7 +37,7 @@ public class CollisionManager implements EventObserver {
         Vec2f beforeCenter = entry.getValue().before().center();
         Collider resolved = entry.getValue().after();
 
-        for (var collision : sortedCollisions(resolved)) {
+        for (var collision : sortedCollisions(entry.getKey(), resolved)) {
             Optional<Vec2f> optMtv = resolved.minimumTranslationVector(beforeCenter, collision.getValue().after());
             if (optMtv.isEmpty()) continue;
 
@@ -47,9 +47,9 @@ public class CollisionManager implements EventObserver {
         }
     }
 
-    private List<Map.Entry<Entity, ColliderState>> sortedCollisions(Collider subject) {
+    private List<Map.Entry<Entity, ColliderState>> sortedCollisions(Entity self, Collider subject) {
         return colliders.entrySet().stream()
-                .filter(e -> !e.getValue().after().equals(subject))
+                .filter(e -> !e.getKey().equals(self))
                 .filter(e -> e.getValue().after().intersects(subject))
                 .sorted(byDecreasingOverlapWith(subject))
                 .toList();
@@ -57,9 +57,7 @@ public class CollisionManager implements EventObserver {
 
     private Comparator<Map.Entry<Entity, ColliderState>> byDecreasingOverlapWith(Collider subject) {
         return Comparator.comparingDouble(e ->
-                -e.getValue().after().collisionAxes(subject)
-                        .map(CollisionAxes::area)
-                        .orElse(0f));
+                -e.getValue().after().overlapArea(subject));
     }
 
     @Override

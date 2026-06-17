@@ -1,7 +1,7 @@
 package com.game;
 
+import com.game.collision.CircleCollider;
 import com.game.collision.CollisionManager;
-import com.game.collision.RectangleCollider;
 import com.game.event.*;
 import com.game.event.collision.CollisionEvent;
 import com.game.input.InputManager;
@@ -21,11 +21,12 @@ public class Reshiram extends Entity implements EventObserver {
         super(transform, texture);
         collisionManager.addCollider(
                 this,
-                new RectangleCollider(
+                /*new RectangleCollider(
                         transform.translation().toVec2f(),
                         transform.scale().compose(0.8f).toVec2f(),
                         true
-                )
+                )*/
+               new CircleCollider(transform.translation().toVec2f(), 0.4f, true)
         );
     }
 

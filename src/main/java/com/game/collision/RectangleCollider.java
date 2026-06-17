@@ -28,25 +28,29 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
     }
 
     @Override
-    public Optional<CollisionAxes> collisionAxes(Collider other) {
-        if (!intersects(other)) return Optional.empty();
-        if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
-            float xOverlap = (width + w2) / 2 - Math.abs(center.x() - c2.x());
-            float yOverlap = (height + h2) / 2 - Math.abs(center.y() - c2.y());
-            return Optional.of(new CollisionAxes(xOverlap, yOverlap));
-        }
-        return Optional.empty();
+    public float overlapArea(Collider other) {
+        return axes(other).map(Axes::area).orElse(0f);
     }
 
     @Override
     public Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other) {
-        return collisionAxes(other).flatMap(axes -> resolveMtv(beforeCenter, other, axes));
+        return axes(other).flatMap(a -> resolveMtv(beforeCenter, other, a));
     }
 
-    private Optional<Vec2f> resolveMtv(Vec2f beforeCenter, Collider other, CollisionAxes axes) {
+    private Optional<Axes> axes(Collider other) {
+        if (!intersects(other)) return Optional.empty();
         if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
-            float xOverlap = axes.xOverlap();
-            float yOverlap = axes.yOverlap();
+            float x = (width + w2) / 2 - Math.abs(center.x() - c2.x());
+            float y = (height + h2) / 2 - Math.abs(center.y() - c2.y());
+            return Optional.of(new Axes(x, y));
+        }
+        return Optional.empty();
+    }
+
+    private Optional<Vec2f> resolveMtv(Vec2f beforeCenter, Collider other, Axes axes) {
+        if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
+            float xOverlap = axes.x;
+            float yOverlap = axes.y;
 
             if (FloatUtils.areEqualsEps(xOverlap, 0) || FloatUtils.areEqualsEps(yOverlap, 0))
                 return Optional.of(Vec2f.ZERO);
@@ -66,5 +70,11 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
                 return Optional.of(new Vec2f(0, center.y() < c2.y() ? -yOverlap : yOverlap));
         }
         return Optional.empty();
+    }
+
+    private record Axes(float x, float y) {
+        float area() {
+            return x * y;
+        }
     }
 }

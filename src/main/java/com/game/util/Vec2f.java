@@ -7,6 +7,10 @@ public record Vec2f(float x, float y) {
         return new Vec2f(x + other.x, y + other.y);
     }
 
+    public Vec2f subtract(Vec2f other) {
+        return new Vec2f(x - other.x, y - other.y);
+    }
+
     public Vec2f mul(float scalar) {
         return new Vec2f(x * scalar, y * scalar);
     }
@@ -15,6 +19,18 @@ public record Vec2f(float x, float y) {
         float lengthSquared = x * x + y * y;
         float invLength = Math.invsqrt(lengthSquared);
         return new Vec2f(x * invLength, y * invLength);
+    }
+
+    public float squaredDistance(Vec2f other) {
+        float dx = x - other.x;
+        float dy = y - other.y;
+        return dx * dx + dy * dy;
+    }
+
+    public float distance(Vec2f other) {
+        float dx = x - other.x;
+        float dy = y - other.y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     public static final Vec2f ZERO = new Vec2f(0, 0);
