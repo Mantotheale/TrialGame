@@ -1,7 +1,11 @@
 import com.game.renderer.texture.Tile;
 import java.io.FileWriter;
 
-try (FileWriter fw = new FileWriter("src/main/resources/maps/simple_map.txt")){
+Path mapsPath = Path.of("src/main/resources/maps");
+if (!Files.isDirectory(mapsPath))
+    IOUtils.createDirectory(mapsPath);
+
+try (FileWriter fw = new FileWriter(mapsPath.resolve("simple_map.txt").toFile())){
     for (int i = -6; i <= 6; i++) {
         fw.write(i + " -7 1 1 1 " + Tile.ROCK + " TRUE\n");
         fw.write(i + " 7 1 1 1 " + Tile.ROCK + " TRUE\n");

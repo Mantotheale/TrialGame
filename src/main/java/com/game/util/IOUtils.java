@@ -93,6 +93,14 @@ public final class IOUtils {
         }
     }
 
+    public static void createDirectory(Path path) {
+        try {
+            Files.createDirectories(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static void deleteStream(Stream<Path> paths) {
         paths.sorted(Comparator.reverseOrder())
                 .forEach(p -> {

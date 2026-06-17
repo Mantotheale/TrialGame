@@ -7,6 +7,7 @@ import com.game.util.Vec2i;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,8 @@ public final class AtlasGenerator {
 
     public void generateAtlases(List<Tile> tiles) {
         if (tiles.isEmpty()) throw new IllegalArgumentException("Can't build an atlas with no tiles");
+        if (!Files.isDirectory(atlasDirectory))
+            IOUtils.createDirectory(atlasDirectory);
 
         IOUtils.deletePathContent(atlasDirectory);
 
