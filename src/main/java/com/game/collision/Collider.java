@@ -11,4 +11,5 @@ public sealed interface Collider permits RectangleCollider, CircleCollider {
     Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other);
     boolean isMobile();
     Vec2f center();
+    boolean contains(Vec2f point);
 }

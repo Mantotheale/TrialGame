@@ -11,6 +11,22 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
         this(center, dimensions.x(), dimensions.y(), isMobile);
     }
 
+    public float left() {
+        return center.x() - width / 2;
+    }
+
+    public float right() {
+        return center.x() + width / 2;
+    }
+
+    public float top() {
+        return center.y() + height / 2;
+    }
+
+    public float bottom() {
+        return center.y() - height / 2;
+    }
+
     @Override
     public Collider moveToPosition(Vec2f position) {
         return new RectangleCollider(position, width, height, isMobile);
@@ -18,13 +34,15 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
 
     @Override
     public boolean intersects(Collider other) {
-        if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
-            if (c2.x() + (w2 / 2) < center.x() - (width / 2)) return false;
-            if (c2.x() - (w2 / 2) > center.x() + (width / 2)) return false;
-            if (c2.y() - (h2 / 2) > center.y() + (height / 2)) return false;
-            return !(c2.y() + (h2 / 2) < center.y() - (height / 2));
-        }
-        return false;
+        return switch (other) {
+            case RectangleCollider(Vec2f c2, float w2, float h2, _) -> {
+                if (c2.x() + (w2 / 2) < center.x() - (width / 2)) yield false;
+                if (c2.x() - (w2 / 2) > center.x() + (width / 2)) yield false;
+                if (c2.y() - (h2 / 2) > center.y() + (height / 2)) yield false;
+                yield !(c2.y() + (h2 / 2) < center.y() - (height / 2));
+            }
+            case CircleCollider circ -> ColliderUtils.intersect(this, circ);
+        };
     }
 
     @Override
@@ -35,6 +53,11 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
     @Override
     public Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other) {
         return axes(other).flatMap(a -> resolveMtv(beforeCenter, other, a));
+    }
+
+    @Override
+    public boolean contains(Vec2f point) {
+        return point.x() >= left() && point.x() <= right() && point.y() >= bottom() && point.y() <= top();
     }
 
     private Optional<Axes> axes(Collider other) {
