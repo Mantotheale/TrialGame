@@ -3,7 +3,8 @@ package com.game.collision;
 import com.game.Entity;
 import com.game.event.*;
 import com.game.event.collision.CollisionEvent;
-import com.game.util.Vec2f;
+import com.game.math.Rectangle;
+import com.game.math.Vec2f;
 
 import java.util.*;
 public class CollisionManager implements EventObserver {
@@ -28,9 +29,9 @@ public class CollisionManager implements EventObserver {
     }
 
     public void findCollisions(EventDispatcher dispatcher) {
-        colliders.entrySet().stream()
-                .filter(e -> e.getValue().before().isMobile())
-                .forEach(e -> resolveCollisionsFor(dispatcher, e));
+        for (var e: colliders.entrySet())
+            if (e.getValue().before.isMobile())
+                resolveCollisionsFor(dispatcher, e);
     }
 
     private void resolveCollisionsFor(EventDispatcher dispatcher, Map.Entry<Entity, ColliderState> entry) {
@@ -38,8 +39,18 @@ public class CollisionManager implements EventObserver {
         Collider resolved = entry.getValue().after();
 
         int c = 0;
-        System.out.println("start pos " + resolved);
         for (var collision : sortedCollisions(entry.getKey(), resolved)) {
+            Rectangle thisRect = ((RectangleCollider)entry.getValue().before).rectangle();
+            Rectangle collRect = ((RectangleCollider) collision.getValue().after).rectangle();
+            System.out.println("----");
+            System.out.println("Before " + entry.getValue().before);
+            System.out.println("After " + entry.getValue().after);
+            System.out.println("Collider " + collision.getValue().after);
+            Optional<Float> collTime = thisRect.intersectionTime(collRect, entry.getValue().after.center());
+            System.out.println("Collision time " + collTime);
+            collTime.ifPresent(aFloat -> System.out.println("Collision state " + thisRect.stopAtTime(entry.getValue().after.center(), aFloat)));
+            System.out.println("----");
+
             Optional<Vec2f> optMtv = resolved.minimumTranslationVector(beforeCenter, collision.getValue().after());
             if (optMtv.isEmpty()) continue;
 

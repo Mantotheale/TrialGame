@@ -3,9 +3,8 @@ package com.game.renderer.texture.atlas;
 import com.game.renderer.texture.Tile;
 import com.game.util.HashingUtils;
 import com.game.util.IOUtils;
-import com.game.util.Vec2i;
+import com.game.math.Vec2i;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -4,7 +4,7 @@ import com.game.renderer.texture.SimpleTexture;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.TextureAttributes;
 import com.game.renderer.texture.Tile;
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 
 import java.nio.file.Path;
 import java.util.EnumMap;

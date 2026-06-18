@@ -1,6 +1,6 @@
 package com.game.collision;
 
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 
 import java.util.Optional;
 

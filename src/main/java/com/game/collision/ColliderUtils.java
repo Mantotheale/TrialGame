@@ -1,7 +1,7 @@
 package com.game.collision;
 
-import com.game.util.FloatUtils;
-import com.game.util.Vec2f;
+import com.game.math.FloatUtils;
+import com.game.math.Vec2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +15,7 @@ public class ColliderUtils {
     }
 
     public static Vec2f closestPointInRect(RectangleCollider rect, Vec2f point) {
+        /*
         float centerX = point.x();
         float centerY = point.y();
 
@@ -30,11 +31,12 @@ public class ColliderUtils {
         else if (centerY > rect.top())
             rectClosePointY = rect.top();
 
-        return new Vec2f(rectClosePointX, rectClosePointY);
+        return new Vec2f(rectClosePointX, rectClosePointY);*/
+        return Vec2f.ZERO;
     }
 
     public static RectOutProjection projectToRectPerimeter(RectangleCollider rect, Vec2f point) {
-
+/*
 
         float closestX, closestY;
         Vec2f outDirectionX, outDirectionY;
@@ -70,10 +72,12 @@ public class ColliderUtils {
             outDirection = outDirectionY;
         }
 
-        return new RectOutProjection(intersection, outDirection);
+        return new RectOutProjection(intersection, outDirection);*/
+        return null;
     }
 
     public static List<Vec2f> lineToRectIntersections(Vec2f p1, Vec2f p2, RectangleCollider rect) {
+        /*
         if (p1.equals(p2)) throw new IllegalArgumentException("The points can't be the same");
 
         if (p1.x() < rect.left() && p2.x() < rect.left()) return List.of();
@@ -121,7 +125,8 @@ public class ColliderUtils {
                 points.add(new Vec2f(rect.right(), rightIntersectionY));
         }
 
-        return points;
+        return points;*/
+        return null;
     }
 
     public record RectOutProjection(Vec2f intersection, Vec2f outDirection) { }

@@ -1,4 +1,4 @@
-package com.game.util;
+package com.game.math;
 
 public class FloatUtils {
     private FloatUtils() { }

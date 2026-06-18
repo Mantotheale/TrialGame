@@ -1,66 +1,53 @@
 package com.game.collision;
 
-import com.game.util.FloatUtils;
-import com.game.util.Vec2f;
+import com.game.math.FloatUtils;
+import com.game.math.Rectangle;
+import com.game.math.Vec2f;
 
 import java.util.Optional;
 
-public record RectangleCollider(Vec2f center, float width, float height, boolean isMobile) implements Collider {
+public record RectangleCollider(Rectangle rectangle, boolean isMobile) implements Collider {
 
     public RectangleCollider(Vec2f center, Vec2f dimensions, boolean isMobile) {
-        this(center, dimensions.x(), dimensions.y(), isMobile);
-    }
-
-    public float left() {
-        return center.x() - width / 2;
-    }
-
-    public float right() {
-        return center.x() + width / 2;
-    }
-
-    public float top() {
-        return center.y() + height / 2;
-    }
-
-    public float bottom() {
-        return center.y() - height / 2;
+        this(new Rectangle(center, dimensions), isMobile);
     }
 
     @Override
     public Collider moveToPosition(Vec2f position) {
-        return new RectangleCollider(position, width, height, isMobile);
+        return new RectangleCollider(rectangle.toPosition(position), isMobile);
     }
 
     @Override
     public boolean intersects(Collider other) {
         return switch (other) {
-            case RectangleCollider(Vec2f c2, float w2, float h2, _) -> {
-                if (c2.x() + (w2 / 2) < center.x() - (width / 2)) yield false;
-                if (c2.x() - (w2 / 2) > center.x() + (width / 2)) yield false;
-                if (c2.y() - (h2 / 2) > center.y() + (height / 2)) yield false;
-                yield !(c2.y() + (h2 / 2) < center.y() - (height / 2));
-            }
+            case RectangleCollider(Rectangle rect2, _) -> rectangle.intersects(rect2);
             case CircleCollider circ -> ColliderUtils.intersect(this, circ);
         };
     }
 
     @Override
     public float overlapArea(Collider other) {
-        return axes(other).map(Axes::area).orElse(0f);
+        return 0;
+        //return axes(other).map(Axes::area).orElse(0f);
     }
 
     @Override
     public Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other) {
-        return axes(other).flatMap(a -> resolveMtv(beforeCenter, other, a));
+        return Optional.empty();
+       // return axes(other).flatMap(a -> resolveMtv(beforeCenter, other, a));
+    }
+
+    @Override
+    public Vec2f center() {
+        return rectangle.center();
     }
 
     @Override
     public boolean contains(Vec2f point) {
-        return point.x() >= left() && point.x() <= right() && point.y() >= bottom() && point.y() <= top();
+        return rectangle.contains(point);
     }
 
-    private Optional<Axes> axes(Collider other) {
+    /*private Optional<Axes> axes(Collider other) {
         if (!intersects(other)) return Optional.empty();
         if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
             float x = (width + w2) / 2 - Math.abs(center.x() - c2.x());
@@ -69,9 +56,9 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
             return Optional.of(new Axes(x, y));
         }
         return Optional.empty();
-    }
+    }*/
 
-    private Optional<Vec2f> resolveMtv(Vec2f beforeCenter, Collider other, Axes axes) {
+    /*private Optional<Vec2f> resolveMtv(Vec2f beforeCenter, Collider other, Axes axes) {
         if (other instanceof RectangleCollider(Vec2f c2, float w2, float h2, _)) {
             float xOverlap = axes.x;
             float yOverlap = axes.y;
@@ -81,6 +68,7 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
 
             float beforeXOverlap = (width + w2) / 2 - Math.abs(beforeCenter.x() - c2.x());
             float beforeYOverlap = (height + h2) / 2 - Math.abs(beforeCenter.y() - c2.y());
+            System.out.println("COLLIDER " + other);
             System.out.println("before overlap axes " + beforeXOverlap + " " + beforeYOverlap);
 
             if (beforeYOverlap >= FloatUtils.EPSILON) {
@@ -115,13 +103,14 @@ public record RectangleCollider(Vec2f center, float width, float height, boolean
 
             // Should never execute
             System.out.println("Problem");
+            System.out.println("Before " + beforeCenter + ", now " + center);
             if (xOverlap < yOverlap)
                 return Optional.of(new Vec2f(center.x() < c2.x() ? -xOverlap : xOverlap, 0));
             else
                 return Optional.of(new Vec2f(0, center.y() < c2.y() ? -yOverlap : yOverlap));
         }
         return Optional.empty();
-    }
+    }*/
 
     private record Axes(float x, float y) {
         float area() {

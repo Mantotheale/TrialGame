@@ -10,11 +10,11 @@ import com.game.input.rawcomponents.PhysicalKey;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 
 public class Reshiram extends Entity implements EventObserver {
     private final InputManager inputManager;
-    private final float movementSpeed = 70f * (float) Game.UPDATE_TIME;
+    private final float movementSpeed = 40f * (float) Game.UPDATE_TIME;
 
     public Reshiram(Transform2D transform, Texture texture, InputManager inputManager, CollisionManager collisionManager) {
         this.inputManager = inputManager;

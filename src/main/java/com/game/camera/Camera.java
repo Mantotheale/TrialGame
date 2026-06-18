@@ -8,7 +8,7 @@ import com.game.event.EventDispatcher;
 import com.game.event.EventObserver;
 import com.game.transform.Transform3D;
 import com.game.transform.Translation3D;
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 

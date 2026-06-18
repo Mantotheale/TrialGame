@@ -1,6 +1,6 @@
 package com.game.transform;
 
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 
 public record Translation2D(float x, float y) {
     public Vec2f transform(Vec2f vec) {

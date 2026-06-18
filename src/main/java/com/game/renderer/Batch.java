@@ -2,7 +2,7 @@ package com.game.renderer;
 
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;

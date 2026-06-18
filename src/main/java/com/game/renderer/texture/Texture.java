@@ -1,6 +1,6 @@
 package com.game.renderer.texture;
 
-import com.game.util.Vec2f;
+import com.game.math.Vec2f;
 
 public interface Texture {
     int texId();
