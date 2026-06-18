@@ -1,7 +1,7 @@
 package com.game;
 
-import com.game.collision.CircleCollider;
 import com.game.collision.CollisionManager;
+import com.game.collision.RectangleCollider;
 import com.game.event.*;
 import com.game.event.collision.CollisionEvent;
 import com.game.input.InputManager;
@@ -14,19 +14,19 @@ import com.game.util.Vec2f;
 
 public class Reshiram extends Entity implements EventObserver {
     private final InputManager inputManager;
-    private final float movementSpeed = 10f * (float) Game.UPDATE_TIME;
+    private final float movementSpeed = 70f * (float) Game.UPDATE_TIME;
 
     public Reshiram(Transform2D transform, Texture texture, InputManager inputManager, CollisionManager collisionManager) {
         this.inputManager = inputManager;
         super(transform, texture);
         collisionManager.addCollider(
                 this,
-                /*new RectangleCollider(
+                new RectangleCollider(
                         transform.translation().toVec2f(),
                         transform.scale().compose(0.8f).toVec2f(),
                         true
-                )*/
-               new CircleCollider(transform.translation().toVec2f(), 0.4f, true)
+                )
+               //new CircleCollider(transform.translation().toVec2f(), 0.4f, true)
         );
     }
 

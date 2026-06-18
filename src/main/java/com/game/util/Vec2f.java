@@ -33,6 +33,10 @@ public record Vec2f(float x, float y) {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    public static Vec2f middlePoint(Vec2f a, Vec2f b) {
+        return new Vec2f(0.5f * (a.x + b.x), 0.5f * (a.y + b.y));
+    }
+
     public static final Vec2f ZERO = new Vec2f(0, 0);
     public static final Vec2f UP = new Vec2f(0, 1);
     public static final Vec2f RIGHT = new Vec2f(1, 0);

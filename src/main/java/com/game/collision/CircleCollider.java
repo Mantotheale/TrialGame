@@ -2,6 +2,7 @@ package com.game.collision;
 
 import com.game.util.Vec2f;
 
+import java.util.List;
 import java.util.Optional;
 
 public record CircleCollider(Vec2f center, float radius, boolean isMobile) implements Collider {
@@ -16,6 +17,7 @@ public record CircleCollider(Vec2f center, float radius, boolean isMobile) imple
             case CircleCollider(Vec2f c2, float r2, _) -> {
                 float squaredDistance = this.center.squaredDistance(c2);
                 float sumOfRadii = this.radius + r2;
+                if (squaredDistance <= sumOfRadii * sumOfRadii) System.out.println("eccoci");
                 yield squaredDistance <= sumOfRadii * sumOfRadii;
             }
             case RectangleCollider rect -> ColliderUtils.intersect(rect, this);
@@ -24,12 +26,18 @@ public record CircleCollider(Vec2f center, float radius, boolean isMobile) imple
 
     @Override
     public float overlapArea(Collider other) {
-        if (other instanceof CircleCollider(Vec2f c2, float r2, _)) {
-            float squaredDistance = this.center.squaredDistance(c2);
-            float sumOfRadii = this.radius + r2;
-            return Math.max(0, sumOfRadii * sumOfRadii - squaredDistance);
+        switch (other) {
+            case CircleCollider(Vec2f c2, float r2, _) -> {
+                float squaredDistance = this.center.squaredDistance(c2);
+                float sumOfRadii = this.radius + r2;
+                return Math.max(0, sumOfRadii * sumOfRadii - squaredDistance);
+            }
+            case RectangleCollider(Vec2f c2, float w2, float h2, _) -> {
+                float squaredDistance = this.center.squaredDistance(c2);
+                float sumOfRadii = this.radius + 0.5f * (w2 + h2);
+                return Math.max(0, sumOfRadii * sumOfRadii - squaredDistance);
+            }
         }
-        throw new IllegalArgumentException("Unknown collider type");
     }
 
     @Override
@@ -47,10 +55,17 @@ public record CircleCollider(Vec2f center, float radius, boolean isMobile) imple
             }
             case RectangleCollider rect -> {
                 if (rect.contains(center)) {
-                    throw new IllegalStateException("Il cerchio si è avvicinato troppo, DA PROGRAMMARE");
+                    List<Vec2f> intersections = ColliderUtils.lineToRectIntersections(center, beforeCenter, rect);
+                    System.out.println(intersections);
+
+                    ColliderUtils.RectOutProjection rectOutProjection = ColliderUtils.projectToRectPerimeter(rect, this.center);
+                    Vec2f toPerimeterDisplacement = rectOutProjection.intersection().subtract(center);
+                    Vec2f fromPerimeterDisplacement = rectOutProjection.outDirection().mul(radius);
+                    Vec2f displacement = toPerimeterDisplacement.add(fromPerimeterDisplacement);
+                    return Optional.of(displacement);
                 }
 
-                Vec2f rectClosePoint = ColliderUtils.rectClosePoint(rect, this);
+                Vec2f rectClosePoint = ColliderUtils.closestPointInRect(rect, this.center);
                 float distance = this.center.distance(rectClosePoint);
                 float overlap = radius - distance;
 

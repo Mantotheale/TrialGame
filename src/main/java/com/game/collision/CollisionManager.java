@@ -37,13 +37,18 @@ public class CollisionManager implements EventObserver {
         Vec2f beforeCenter = entry.getValue().before().center();
         Collider resolved = entry.getValue().after();
 
+        int c = 0;
+        System.out.println("start pos " + resolved);
         for (var collision : sortedCollisions(entry.getKey(), resolved)) {
             Optional<Vec2f> optMtv = resolved.minimumTranslationVector(beforeCenter, collision.getValue().after());
             if (optMtv.isEmpty()) continue;
 
+            System.out.println("collision number " + c + ", mtv: " + optMtv);
+            c++;
             Vec2f mtv = optMtv.get();
             dispatcher.pushEvent(new CollisionEvent(entry.getKey(), collision.getKey(), mtv));
             resolved = resolved.moveToPosition(resolved.center().add(mtv));
+            System.out.println("new pos " + resolved);
         }
     }
 
@@ -57,7 +62,7 @@ public class CollisionManager implements EventObserver {
 
     private Comparator<Map.Entry<Entity, ColliderState>> byDecreasingOverlapWith(Collider subject) {
         return Comparator.comparingDouble(e ->
-                -e.getValue().after().overlapArea(subject));
+                -subject.overlapArea(e.getValue().after()));
     }
 
     @Override

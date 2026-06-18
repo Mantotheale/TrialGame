@@ -17,4 +17,15 @@ public class FloatUtils {
             acc += v;
         return acc / values.length;
     }
+
+    public static float max(float... values) {
+        if (values.length == 0) throw new IllegalArgumentException("Can't take the max of 0 values");
+
+        float max = Float.MIN_VALUE;
+        for (float v: values)
+            if (v > max)
+                max = v;
+
+        return max;
+    }
 }

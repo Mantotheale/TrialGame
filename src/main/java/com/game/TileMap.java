@@ -47,6 +47,7 @@ public class TileMap implements Iterable<RenderComponent> {
                     if (isSolid) {
                         Entity map = new MapEntity(transform, resourceManager.getTexture(tile));
                         collisionManager.addCollider(map, new RectangleCollider(new Vec2f(x, y), scaleX, scaleY, false));
+                        //collisionManager.addCollider(map, new CircleCollider(new Vec2f(x, y), scaleX / 2, false));
                     }
 
                     return new RenderComponent(transform, resourceManager.getTexture(tile));
