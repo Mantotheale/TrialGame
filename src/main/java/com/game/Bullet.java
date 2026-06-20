@@ -1,6 +1,10 @@
 package com.game;
 
 import com.game.event.*;
+import com.game.event.deferred.EntityMovedEvent;
+import com.game.event.bus.EventBus;
+import com.game.event.instant.RenderRequestEvent;
+import com.game.event.instant.UpdateEvent;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
@@ -17,16 +21,16 @@ public class Bullet extends Entity {
     }
 
     @Override
-    public void onEvent(EventDispatcher dispatcher, Event event) {
+    public void onEvent(EventBus bus, InstantEvent event) {
         switch (event) {
             case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
-            case StartUpdateEvent() -> {
+            case UpdateEvent() -> {
                 elapsedUpdates++;
                 if (elapsedUpdates == 5 * UPDATES_PER_SECOND) {
-                    dispatcher.removeObserver(this);
+                    bus.removeInstantObserver(this);
                 } else {
                     transform = transform.translate(-1 * (float) UPDATE_TIME, 0);
-                    dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
+                    bus.postDeferredEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
                 }
             }
             default -> { }

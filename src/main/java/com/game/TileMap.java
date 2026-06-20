@@ -1,15 +1,12 @@
 package com.game;
 
 import com.game.collision.CollisionManager;
-import com.game.collision.RectangleCollider;
-import com.game.math.Rectangle;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
 import com.game.transform.Transform2D;
 import com.game.transform.Translation2D;
 import com.game.util.IOUtils;
-import com.game.math.Vec2f;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -47,7 +44,7 @@ public class TileMap implements Iterable<RenderComponent> {
 
                     if (isSolid) {
                         Entity map = new MapEntity(transform, resourceManager.getTexture(tile));
-                        collisionManager.addCollider(map, new RectangleCollider(new Rectangle(x, y, scaleX, scaleY) , false));
+                        //collisionManager.addCollider(map, new RectangleCollider(new Rectangle(x, y, scaleX, scaleY) , false));
                         //collisionManager.addCollider(map, new CircleCollider(new Vec2f(x, y), scaleX / 2, false));
                     }
 

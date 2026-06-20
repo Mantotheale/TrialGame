@@ -1,10 +1,10 @@
 package com.game.renderer;
 
 import com.game.camera.Camera;
-import com.game.event.Event;
-import com.game.event.EventDispatcher;
-import com.game.event.EventObserver;
-import com.game.event.FrameBufferResizedEvent;
+import com.game.event.DeferredEvent;
+import com.game.event.bus.EventBus;
+import com.game.event.bus.EventObserver;
+import com.game.event.deferred.FrameBufferResizedEvent;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
@@ -16,7 +16,7 @@ import java.util.PriorityQueue;
 
 import static org.lwjgl.opengl.GL20.*;
 
-public class Renderer implements EventObserver {
+public class Renderer implements EventObserver<DeferredEvent> {
     private static final int MAX_QUAD_COUNT = 10000;
     private static final int TEXTURE_UNITS = 8;
 
@@ -87,7 +87,7 @@ public class Renderer implements EventObserver {
     }
 
     @Override
-    public void onEvent(EventDispatcher dispatcher, Event event) {
+    public void onEvent(EventBus bus, DeferredEvent event) {
         if (event instanceof FrameBufferResizedEvent(int newWidth, int newHeight))
             setViewport(0, 0, newWidth, newHeight);
     }

@@ -1,7 +1,7 @@
 package com.game.input;
 
-import com.game.event.CloseGameRequestedEvent;
-import com.game.event.EventDispatcher;
+import com.game.event.deferred.CloseGameRequestedEvent;
+import com.game.event.bus.EventBus;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalAction;
 import com.game.input.rawcomponents.PhysicalKey;
@@ -11,14 +11,14 @@ import java.util.Arrays;
 
 public class InputManager implements InputObserver {
     private final KeyState[] keyStates;
-    private final EventDispatcher eventDispatcher;
+    private final EventBus eventBus;
 
-    public InputManager(Window window, EventDispatcher eventDispatcher) {
+    public InputManager(Window window, EventBus eventBus) {
         keyStates = new KeyState[PhysicalKey.values().length];
         Arrays.fill(keyStates, KeyState.UP);
         window.addObserver(this);
 
-        this.eventDispatcher = eventDispatcher;
+        this.eventBus = eventBus;
     }
 
     public KeyState keyState(PhysicalKey key) {
@@ -35,8 +35,9 @@ public class InputManager implements InputObserver {
         }
 
         switch (input) {
-            case CloseWindow() -> eventDispatcher.pushEvent(new CloseGameRequestedEvent());
-            case KeyInput(PhysicalKey key, _) when key == PhysicalKey.ESCAPE -> eventDispatcher.pushEvent(new CloseGameRequestedEvent());
+            case CloseWindow() -> eventBus.postDeferredEvent(new CloseGameRequestedEvent());
+            case KeyInput(PhysicalKey key, _) when key == PhysicalKey.ESCAPE ->
+                    eventBus.postDeferredEvent(new CloseGameRequestedEvent());
             default -> {}
         }
     }

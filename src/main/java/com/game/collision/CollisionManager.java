@@ -2,14 +2,16 @@ package com.game.collision;
 
 import com.game.Entity;
 import com.game.event.*;
-import com.game.event.collision.CollisionEvent;
+import com.game.event.deferred.EntityMovedEvent;
+import com.game.event.bus.EventBus;
+import com.game.event.bus.EventObserver;
 import com.game.math.Rectangle;
 import com.game.math.Vec2f;
 
 import java.util.*;
-public class CollisionManager implements EventObserver {
+public class CollisionManager {
 
-    private record ColliderState(Collider before, Collider after) {
+    /*private record ColliderState(Collider before, Collider after) {
         ColliderState movedTo(Vec2f position) {
             return new ColliderState(before, after.moveToPosition(position));
         }
@@ -28,13 +30,13 @@ public class CollisionManager implements EventObserver {
         colliders.remove(entity);
     }
 
-    public void findCollisions(EventDispatcher dispatcher) {
+    public void findCollisions(EventBus dispatcher) {
         for (var e: colliders.entrySet())
             if (e.getValue().before.isMobile())
                 resolveCollisionsFor(dispatcher, e);
     }
 
-    private void resolveCollisionsFor(EventDispatcher dispatcher, Map.Entry<Entity, ColliderState> entry) {
+    private void resolveCollisionsFor(EventBus dispatcher, Map.Entry<Entity, ColliderState> entry) {
         Vec2f beforeCenter = entry.getValue().before().center();
         Collider resolved = entry.getValue().after();
 
@@ -77,7 +79,7 @@ public class CollisionManager implements EventObserver {
     }
 
     @Override
-    public void onEvent(EventDispatcher dispatcher, Event event) {
+    public void onEvent(EventBus dispatcher, Event event) {
         switch (event) {
             case EntityMovedEvent(Entity entity, Vec2f position) -> {
                 ColliderState state = colliders.get(entity);
@@ -86,5 +88,5 @@ public class CollisionManager implements EventObserver {
             case EndUpdateEvent() -> colliders.replaceAll((_, state) -> state.evolve());
             default -> {}
         }
-    }
+    }*/
 }

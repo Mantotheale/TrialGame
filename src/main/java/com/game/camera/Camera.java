@@ -2,10 +2,10 @@ package com.game.camera;
 
 import com.game.Entity;
 import com.game.Reshiram;
-import com.game.event.EntityMovedEvent;
-import com.game.event.Event;
-import com.game.event.EventDispatcher;
-import com.game.event.EventObserver;
+import com.game.event.DeferredEvent;
+import com.game.event.deferred.EntityMovedEvent;
+import com.game.event.bus.EventBus;
+import com.game.event.bus.EventObserver;
 import com.game.transform.Transform3D;
 import com.game.transform.Translation3D;
 import com.game.math.Vec2f;
@@ -14,7 +14,7 @@ import org.joml.Vector3f;
 
 import static com.game.transform.Rotation3D.WORLD_UP;
 
-public class Camera implements EventObserver {
+public class Camera implements EventObserver<DeferredEvent> {
     private CameraProjection projection;
     private Transform3D transform3d;
 
@@ -39,7 +39,7 @@ public class Camera implements EventObserver {
     }
 
     @Override
-    public void onEvent(EventDispatcher dispatcher, Event event) {
+    public void onEvent(EventBus dispatcher, DeferredEvent event) {
         if (event instanceof EntityMovedEvent(Entity entity, Vec2f position)) {
             if (entity instanceof Reshiram) {
                 transform3d = new Transform3D(

@@ -1,3 +1,3 @@
 package com.game.event;
 
-public interface Event { }
+public sealed interface Event permits InstantEvent, DeferredEvent { }

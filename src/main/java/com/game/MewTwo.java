@@ -1,8 +1,10 @@
 package com.game;
 
-import com.game.collision.CircleCollider;
 import com.game.collision.CollisionManager;
 import com.game.event.*;
+import com.game.event.bus.EventBus;
+import com.game.event.instant.RenderRequestEvent;
+import com.game.event.instant.UpdateEvent;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
@@ -17,18 +19,18 @@ public class MewTwo extends Entity {
     public MewTwo(Transform2D transform, Texture texture, ResourceManager resourceManager, CollisionManager collisionManager) {
         super(transform, texture);
         this.resourceManager = resourceManager;
-        collisionManager.addCollider(
+        /*collisionManager.addCollider(
                 this,
                 new CircleCollider(transform.translation().toVec2f(), 0.4f, false)
                 //new RectangleCollider(transform.translation().toVec2f(), transform.scale().compose(0.8f).toVec2f(), false)
-        );
+        );*/
         frames = 0;
     }
 
     @Override
-    public void onEvent(EventDispatcher dispatcher, Event event) {
+    public void onEvent(EventBus dispatcher, InstantEvent event) {
         switch (event) {
-            case StartUpdateEvent() -> {
+            case UpdateEvent() -> {
                 frames++;
 
                 if (frames == 60) {
@@ -40,7 +42,7 @@ public class MewTwo extends Entity {
                             ),
                             resourceManager.getTexture(Tile.BULLET)
                     );
-                    dispatcher.addObserver(bullet);
+                    dispatcher.addInstantObserver(bullet);
                     frames = 0;
                 }
             }

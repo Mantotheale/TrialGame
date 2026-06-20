@@ -2,8 +2,10 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
-import com.game.collision.CollisionManager;
 import com.game.event.*;
+import com.game.event.deferred.CloseGameRequestedEvent;
+import com.game.event.bus.EventBus;
+import com.game.event.instant.*;
 import com.game.input.*;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.*;
@@ -28,8 +30,8 @@ public class Game {
     private final Renderer renderer;
     private final InputManager inputManager;
     private final ResourceManager resourceManager;
-    private final EventDispatcher eventDispatcher;
-    private final CollisionManager collisionManager;
+    private final EventBus eventBus;
+    //private final CollisionManager collisionManager;
 
     private final Entity reshiram;
     private final Entity mewtwo;
@@ -46,9 +48,9 @@ public class Game {
 
         shouldClose = false;
 
-        eventDispatcher = new EventDispatcher();
-        eventDispatcher.addObserver(this::onCloseGameRequest);
-        eventDispatcher.addObserver(this::onRenderRequested);
+        eventBus = new EventBus();
+        eventBus.addInstantObserver(this::onRenderRequested);
+        eventBus.addDeferredObserver(this::onCloseGameRequest);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -60,7 +62,7 @@ public class Game {
         renderer = new Renderer();
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
-        inputManager = new InputManager(window, eventDispatcher);
+        inputManager = new InputManager(window, eventBus);
 
         resourceManager = new ResourceManager(Path.of("src/main/resources/atlases"));
 
@@ -71,28 +73,28 @@ public class Game {
                 new CameraProjection.Orthographic(-7, 7, -7, 7, 0.01f, 20),
                 new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D())
         );
-        eventDispatcher.addObserver(camera);
+        eventBus.addDeferredObserver(camera);
 
-        collisionManager = new CollisionManager();
-        eventDispatcher.addObserver(collisionManager);
+        /*collisionManager = new CollisionManager();
+        eventBus.addObserver(collisionManager);*/
 
-        map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager, collisionManager);
+        map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager, null);
 
         reshiram = new Reshiram(
                 new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),
                 resourceManager.getTexture(Tile.RESHIRAM),
                 inputManager,
-                collisionManager
+                null
         );
-        eventDispatcher.addObserver(reshiram);
+        eventBus.addInstantObserver(reshiram);
 
         mewtwo = new MewTwo(
                 new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
                 resourceManager.getTexture(Tile.MEWTWO),
                 resourceManager,
-                collisionManager
+                null
         );
-        eventDispatcher.addObserver(mewtwo);
+        eventBus.addInstantObserver(mewtwo);
 
         updates = 0;
         frames = 0;
@@ -126,20 +128,14 @@ public class Game {
 
     private void processInputs() {
         glfwPollEvents();
-        eventDispatcher.dispatchEvents();
+        eventBus.dispatchDeferredEvents();
     }
 
     private void update() {
         updates++;
 
-        eventDispatcher.pushEvent(new StartUpdateEvent());
-        eventDispatcher.dispatchEvents();
-
-        collisionManager.findCollisions(eventDispatcher);
-        eventDispatcher.dispatchEvents();
-
-        eventDispatcher.pushEvent(new EndUpdateEvent());
-        eventDispatcher.dispatchEvents();
+        eventBus.postInstantEvent(new UpdateEvent());
+        eventBus.dispatchDeferredEvents();
     }
 
     private void oneSecUpdate() {
@@ -149,21 +145,15 @@ public class Game {
         frames = 0;
         elapsedSeconds++;
 
-        eventDispatcher.pushEvent(new StartOneSecUpdateEvent());
-        eventDispatcher.dispatchEvents();
-
-        eventDispatcher.pushEvent(new EndOneSecUpdateEvent());
-        eventDispatcher.dispatchEvents();
+        eventBus.postInstantEvent(new OneSecUpdateEvent());
+        eventBus.dispatchDeferredEvents();
     }
 
     private void render() {
         frames++;
 
         renderer.beginScene(camera);
-
-        eventDispatcher.pushEvent(new RenderRequestEvent(renderer));
-        eventDispatcher.dispatchEvents();
-
+        eventBus.postInstantEvent(new RenderRequestEvent(renderer));
         renderer.endScene();
 
         window.swapBuffers();
@@ -173,24 +163,22 @@ public class Game {
         return shouldClose;
     }
 
-    public void onRenderRequested(EventDispatcher dispatcher, Event event) {
-        if (event instanceof RenderRequestEvent(Renderer r)) {
+    public void onRenderRequested(EventBus dispatcher, InstantEvent event) {
+        if (event instanceof RenderRequestEvent(Renderer r))
             for (RenderComponent component: map)
                 r.submit(component.transform(), component.texture());
-        }
     }
 
-    public void onCloseGameRequest(EventDispatcher dispatcher, Event event) {
-        if (event instanceof CloseGameRequestedEvent) {
+    public void onCloseGameRequest(EventBus dispatcher, DeferredEvent event) {
+        if (event instanceof CloseGameRequestedEvent)
             shouldClose = true;
-        }
     }
 
     private void terminate() {
         resourceManager.delete();
         renderer.delete();
         window.delete();
-        eventDispatcher.pushEvent(new GameClosedEvent());
-        eventDispatcher.dispatchEvents();
+        eventBus.postInstantEvent(new GameClosedEvent());
+        eventBus.dispatchDeferredEvents();
     }
 }

@@ -1,25 +1,29 @@
 package com.game;
 
 import com.game.collision.CollisionManager;
-import com.game.collision.RectangleCollider;
-import com.game.event.*;
-import com.game.event.collision.CollisionEvent;
+import com.game.event.InstantEvent;
+import com.game.event.bus.EventBus;
+import com.game.event.bus.EventObserver;
+import com.game.event.deferred.EntityMovedEvent;
+import com.game.event.instant.RenderRequestEvent;
+import com.game.event.instant.UpdateEvent;
 import com.game.input.InputManager;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalKey;
+import com.game.math.Vec2f;
 import com.game.renderer.Renderer;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
-import com.game.math.Vec2f;
 
-public class Reshiram extends Entity implements EventObserver {
+public class Reshiram extends Entity implements EventObserver<InstantEvent> {
     private final InputManager inputManager;
-    private final float movementSpeed = 40f * (float) Game.UPDATE_TIME;
+    private final float movementSpeed = 20 * (float) Game.UPDATE_TIME;
+    private Vec2f velocity = Vec2f.ZERO;
 
     public Reshiram(Transform2D transform, Texture texture, InputManager inputManager, CollisionManager collisionManager) {
         this.inputManager = inputManager;
         super(transform, texture);
-        collisionManager.addCollider(
+       /* collisionManager.addCollider(
                 this,
                 new RectangleCollider(
                         transform.translation().toVec2f(),
@@ -27,34 +31,32 @@ public class Reshiram extends Entity implements EventObserver {
                         true
                 )
                //new CircleCollider(transform.translation().toVec2f(), 0.4f, true)
-        );
+        );*/
     }
 
     @Override
-    public void onEvent(EventDispatcher dispatcher, Event event) {
+    public void onEvent(EventBus bus, InstantEvent event) {
         switch (event) {
-            case StartUpdateEvent() -> {
-                Vec2f acc = Vec2f.ZERO;
+            case UpdateEvent() -> {
+                Vec2f direction = Vec2f.ZERO;
                 if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN)
-                    acc = acc.add(Vec2f.UP);
+                    direction = direction.add(Vec2f.UP);
                 if (inputManager.keyState(PhysicalKey.S) == KeyState.DOWN)
-                    acc = acc.add(Vec2f.DOWN);
+                    direction = direction.add(Vec2f.DOWN);
                 if (inputManager.keyState(PhysicalKey.A) == KeyState.DOWN)
-                    acc = acc.add(Vec2f.LEFT);
+                    direction = direction.add(Vec2f.LEFT);
                 if (inputManager.keyState(PhysicalKey.D) == KeyState.DOWN)
-                    acc = acc.add(Vec2f.RIGHT);
+                    direction = direction.add(Vec2f.RIGHT);
 
-                if (!acc.equals(Vec2f.ZERO)) {
-                    transform = transform.translate(acc.normalize().mul(movementSpeed));
-                    dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
+                if (!direction.equals(Vec2f.ZERO)) {
+                    Vec2f velocity = direction.normalize().mul(movementSpeed);
+                    transform = transform.translate(velocity);
+                    bus.postDeferredEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
                 }
             }
             case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
-            case CollisionEvent(Entity e, _, Vec2f minimumTranslationVector) when e.equals(this) -> {
-                transform = transform.translate(minimumTranslationVector);
-                dispatcher.pushEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
-            }
             default -> { }
         }
     }
+
 }
