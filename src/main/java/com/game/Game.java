@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
+import com.game.collision.CollisionManager;
 import com.game.event.*;
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
@@ -31,7 +32,7 @@ public class Game {
     private final InputManager inputManager;
     private final ResourceManager resourceManager;
     private final EventBus eventBus;
-    //private final CollisionManager collisionManager;
+    private final CollisionManager collisionManager;
 
     private final Entity reshiram;
     private final Entity mewtwo;
@@ -136,6 +137,9 @@ public class Game {
 
         eventBus.postInstantEvent(new UpdateEvent());
         eventBus.dispatchDeferredEvents();
+
+        collisionManager; // CHECK COLLISIONS
+        eventBus.postEvent(new MoveRequestEvent());
     }
 
     private void oneSecUpdate() {

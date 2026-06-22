@@ -42,7 +42,8 @@ public class MewTwo extends Entity {
                             ),
                             resourceManager.getTexture(Tile.BULLET)
                     );
-                    dispatcher.addInstantObserver(bullet);
+                    dispatcher.addObserver(RenderRequestEvent.class, bullet);
+                    dispatcher.addObserver(bullet);
                     frames = 0;
                 }
             }

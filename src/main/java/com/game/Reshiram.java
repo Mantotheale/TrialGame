@@ -51,7 +51,7 @@ public class Reshiram extends Entity implements EventObserver<InstantEvent> {
                 if (!direction.equals(Vec2f.ZERO)) {
                     Vec2f velocity = direction.normalize().mul(movementSpeed);
                     transform = transform.translate(velocity);
-                    bus.postDeferredEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
+                    bus.postEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
                 }
             }
             case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
