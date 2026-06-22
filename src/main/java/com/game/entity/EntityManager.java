@@ -1,5 +1,8 @@
 package com.game.entity;
 
+import com.game.event.bus.EventBus;
+import com.game.event.deferred.EntityDeletedEvent;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -7,8 +10,9 @@ import java.util.NoSuchElementException;
 public class EntityManager {
     private final Map<EntityId, Entity> entities;
 
-    public EntityManager() {
+    public EntityManager(EventBus bus) {
         entities = new HashMap<>();
+        bus.addObserver(EntityDeletedEvent.class, this::onEntityDeleted);
     }
 
     public EntityId registerEntity(Entity entity) {
@@ -32,5 +36,9 @@ public class EntityManager {
             throw new NoSuchElementException("There is no entity with ID " + id);
 
         return entity;
+    }
+
+    private void onEntityDeleted(EventBus bus, EntityDeletedEvent event) {
+        entities.remove(event.entityId());
     }
 }

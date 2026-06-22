@@ -1,6 +1,7 @@
 package com.game;
 
-import com.game.collision.CollisionManager;
+import com.game.entity.EntityManager;
+import com.game.event.bus.EventBus;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
@@ -23,7 +24,7 @@ public class TileMap implements Iterable<RenderComponent> {
         return Collections.unmodifiableList(tiles).iterator();
     }
 
-    public static TileMap fromFile(Path path, ResourceManager resourceManager, CollisionManager collisionManager) {
+    public static TileMap fromFile(Path path, ResourceManager resourceManager, EventBus eventBus, EntityManager entityManager) {
         List<RenderComponent> tiles = IOUtils.readAllLines(path).stream()
                 .filter(l -> !l.isBlank())
                 .map(l -> l.split(" "))
@@ -43,7 +44,7 @@ public class TileMap implements Iterable<RenderComponent> {
                     );
 
                     if (isSolid) {
-                        Entity map = new MapEntity(transform, resourceManager.getTexture(tile));
+                        new MapElementEntity(transform, resourceManager.getTexture(tile), eventBus, entityManager);
                         //collisionManager.addCollider(map, new RectangleCollider(new Rectangle(x, y, scaleX, scaleY) , false));
                         //collisionManager.addCollider(map, new CircleCollider(new Vec2f(x, y), scaleX / 2, false));
                     }

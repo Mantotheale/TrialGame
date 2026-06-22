@@ -1,7 +1,7 @@
 package com.game.entity;
 
 public class EntityId {
-    private static int counter = 0;
+    private static int counter = 1;
 
     private final int id;
 
@@ -30,4 +30,6 @@ public class EntityId {
         counter++;
         return id;
     }
+
+    public final static EntityId NONE = new EntityId(0);
 }

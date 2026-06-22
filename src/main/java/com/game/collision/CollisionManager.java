@@ -1,14 +1,5 @@
 package com.game.collision;
 
-import com.game.Entity;
-import com.game.event.*;
-import com.game.event.deferred.EntityMovedEvent;
-import com.game.event.bus.EventBus;
-import com.game.event.bus.EventObserver;
-import com.game.math.Rectangle;
-import com.game.math.Vec2f;
-
-import java.util.*;
 public class CollisionManager {
 
     /*private record ColliderState(Collider before, Collider after) {

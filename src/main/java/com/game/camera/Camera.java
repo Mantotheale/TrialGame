@@ -1,26 +1,26 @@
 package com.game.camera;
 
-import com.game.Entity;
-import com.game.Reshiram;
-import com.game.event.DeferredEvent;
+import com.game.entity.EntityId;
 import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.bus.EventBus;
-import com.game.event.bus.EventObserver;
 import com.game.transform.Transform3D;
 import com.game.transform.Translation3D;
-import com.game.math.Vec2f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import static com.game.transform.Rotation3D.WORLD_UP;
 
-public class Camera implements EventObserver<DeferredEvent> {
+public class Camera {
     private CameraProjection projection;
     private Transform3D transform3d;
+    private EntityId entityToFollow;
 
-    public Camera(CameraProjection projection, Transform3D transform3d) {
+    public Camera(CameraProjection projection, Transform3D transform3d, EventBus bus) {
         this.projection = projection;
         this.transform3d = transform3d;
+        entityToFollow = EntityId.NONE;
+
+        bus.addObserver(EntityMovedEvent.class, this::onEntityMoved);
     }
 
     public Matrix4f view() {
@@ -38,20 +38,20 @@ public class Camera implements EventObserver<DeferredEvent> {
         return projection().mulAffine(view());
     }
 
-    @Override
-    public void onEvent(EventBus dispatcher, DeferredEvent event) {
-        if (event instanceof EntityMovedEvent(Entity entity, Vec2f position)) {
-            if (entity instanceof Reshiram) {
-                transform3d = new Transform3D(
-                        new Translation3D(
-                                position.x(),
-                                position.y(),
-                                transform3d.translation3d().z()
-                        ),
-                        transform3d.rotation3D(),
-                        transform3d.scale3D()
-                );
-            }
-        }
+    public void followEntity(EntityId entityId) {
+        this.entityToFollow = entityId;
+    }
+
+    private void onEntityMoved(EventBus bus, EntityMovedEvent event) {
+        if (event.entityId().equals(entityToFollow))
+            transform3d = new Transform3D(
+                    new Translation3D(
+                            event.position().x(),
+                            event.position().y(),
+                            transform3d.translation3d().z()
+                    ),
+                    transform3d.rotation3D(),
+                    transform3d.scale3D()
+            );
     }
 }

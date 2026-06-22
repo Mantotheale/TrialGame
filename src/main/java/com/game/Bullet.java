@@ -4,8 +4,10 @@ import com.game.entity.Entity;
 import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
+import com.game.event.bus.EventObserver;
+import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.deferred.EntityMovedEvent;
-import com.game.event.instant.MoveRequestEvent;
+import com.game.event.instant.CollisionResolvedEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
 import com.game.math.Vec2f;
@@ -24,6 +26,11 @@ public class Bullet implements Entity {
     int elapsedUpdates;
     private final Vec2f velocity;
 
+    private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
+    private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
+    private final EventObserver<CollisionResolvedEvent> onMoveFunc = this::onMove;
+
+
     public Bullet(Transform2D transform, ResourceManager resourceManager, EntityManager entityManager, EventBus bus) {
         this.transform = transform;
         this.texture = resourceManager.getTexture(Tile.BULLET);
@@ -31,9 +38,9 @@ public class Bullet implements Entity {
         id = entityManager.registerEntity(this);
         velocity = Vec2f.LEFT.mul((float) UPDATE_TIME);
 
-        bus.addObserver(RenderRequestEvent.class, this::onRender);
-        bus.addObserver(UpdateEvent.class, this::onUpdate);
-        bus.addObserver(MoveRequestEvent.class, this::onMove);
+        bus.addObserver(RenderRequestEvent.class, onRenderFunc);
+        bus.addObserver(UpdateEvent.class, onUpdateFunc);
+        bus.addObserver(CollisionResolvedEvent.class, onMoveFunc);
     }
 
     @Override
@@ -41,37 +48,26 @@ public class Bullet implements Entity {
         return id;
     }
 
-    public void onRender(EventBus bus, RenderRequestEvent event) {
+    private void onRender(EventBus bus, RenderRequestEvent event) {
         event.renderer().submit(transform, texture);
     }
 
-    public void onUpdate(EventBus bus, UpdateEvent event) {
+    private void onUpdate(EventBus bus, UpdateEvent event) {
         elapsedUpdates++;
-        if (elapsedUpdates == 5 * UPDATES_PER_SECOND) {
-            bus.removeObserver(UpdateEvent.class, this::onUpdate);
-        }
+        if (elapsedUpdates == 5 * UPDATES_PER_SECOND)
+            delete(bus);
     }
 
-    public void onMove(EventBus bus, MoveRequestEvent event) {
+    private void onMove(EventBus bus, CollisionResolvedEvent event) {
         transform = transform.translate(velocity);
         bus.postEvent(new EntityMovedEvent(id, transform.translation().toVec2f()));
     }
 
-    /*
     @Override
-    public void onEvent(EventBus bus, InstantEvent event) {
-        switch (event) {
-            case RenderRequestEvent(Renderer renderer) -> renderer.submit(transform, texture);
-            case UpdateEvent() -> {
-                elapsedUpdates++;
-                if (elapsedUpdates == 5 * UPDATES_PER_SECOND) {
-                    bus.removeInstantObserver(this);
-                } else {
-                    transform = transform.translate(-1 * (float) UPDATE_TIME, 0);
-                    bus.postDeferredEvent(new EntityMovedEvent(this, transform.translation().toVec2f()));
-                }
-            }
-            default -> { }
-        }
-    }*/
+    public void delete(EventBus bus) {
+        bus.removeObserver(RenderRequestEvent.class, onRenderFunc);
+        bus.removeObserver(UpdateEvent.class, onUpdateFunc);
+        bus.removeObserver(CollisionResolvedEvent.class, onMoveFunc);
+        bus.postEvent(new EntityDeletedEvent(id));
+    }
 }

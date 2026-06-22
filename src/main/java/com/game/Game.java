@@ -2,7 +2,8 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
-import com.game.collision.CollisionManager;
+import com.game.entity.Entity;
+import com.game.entity.EntityManager;
 import com.game.event.*;
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
@@ -32,7 +33,7 @@ public class Game {
     private final InputManager inputManager;
     private final ResourceManager resourceManager;
     private final EventBus eventBus;
-    private final CollisionManager collisionManager;
+    private final EntityManager entityManager;
 
     private final Entity reshiram;
     private final Entity mewtwo;
@@ -50,8 +51,10 @@ public class Game {
         shouldClose = false;
 
         eventBus = new EventBus();
-        eventBus.addInstantObserver(this::onRenderRequested);
-        eventBus.addDeferredObserver(this::onCloseGameRequest);
+        eventBus.addObserver(RenderRequestEvent.class, this::onRenderRequested);
+        eventBus.addObserver(CloseGameRequestedEvent.class, this::onCloseGameRequest);
+
+        entityManager = new EntityManager(eventBus);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -72,30 +75,34 @@ public class Game {
 
         camera = new Camera(
                 new CameraProjection.Orthographic(-7, 7, -7, 7, 0.01f, 20),
-                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D())
+                new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D()),
+                eventBus
         );
-        eventBus.addDeferredObserver(camera);
 
         /*collisionManager = new CollisionManager();
         eventBus.addObserver(collisionManager);*/
 
-        map = TileMap.fromFile(Path.of("src/main/resources/maps/simple_map.txt"), resourceManager, null);
+        map = TileMap.fromFile(
+                Path.of("src/main/resources/maps/simple_map.txt"),
+                resourceManager,
+                eventBus,
+                entityManager
+        );
 
         reshiram = new Reshiram(
                 new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),
-                resourceManager.getTexture(Tile.RESHIRAM),
                 inputManager,
-                null
+                resourceManager,
+                eventBus,
+                entityManager
         );
-        eventBus.addInstantObserver(reshiram);
 
         mewtwo = new MewTwo(
                 new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
-                resourceManager.getTexture(Tile.MEWTWO),
                 resourceManager,
-                null
+                eventBus,
+                entityManager
         );
-        eventBus.addInstantObserver(mewtwo);
 
         updates = 0;
         frames = 0;
@@ -135,11 +142,12 @@ public class Game {
     private void update() {
         updates++;
 
-        eventBus.postInstantEvent(new UpdateEvent());
+        eventBus.postEvent(new UpdateEvent());
         eventBus.dispatchDeferredEvents();
 
-        collisionManager; // CHECK COLLISIONS
-        eventBus.postEvent(new MoveRequestEvent());
+        // CHECK COLLISIONS AND RESOLVE THEM
+        eventBus.dispatchDeferredEvents();
+        eventBus.postEvent(new CanMoveEvent());
     }
 
     private void oneSecUpdate() {
@@ -149,7 +157,7 @@ public class Game {
         frames = 0;
         elapsedSeconds++;
 
-        eventBus.postInstantEvent(new OneSecUpdateEvent());
+        eventBus.postEvent(new OneSecUpdateEvent());
         eventBus.dispatchDeferredEvents();
     }
 
@@ -157,7 +165,7 @@ public class Game {
         frames++;
 
         renderer.beginScene(camera);
-        eventBus.postInstantEvent(new RenderRequestEvent(renderer));
+        eventBus.postEvent(new RenderRequestEvent(renderer));
         renderer.endScene();
 
         window.swapBuffers();
@@ -182,7 +190,9 @@ public class Game {
         resourceManager.delete();
         renderer.delete();
         window.delete();
-        eventBus.postInstantEvent(new GameClosedEvent());
+        reshiram.delete(eventBus);
+        mewtwo.delete(eventBus);
+        eventBus.postEvent(new GameClosedEvent());
         eventBus.dispatchDeferredEvents();
     }
 }
