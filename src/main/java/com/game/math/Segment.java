@@ -51,7 +51,7 @@ public record Segment(Vec2f origin, Vec2f destination) {
         float tStart = Math.max(txStart, tyStart);
         float tEnd = Math.min(txEnd, tyEnd);
         if (tEnd < 0) return Optional.empty();
-        if (tStart < 0 || tStart > 1) return Optional.empty();
+        if (FloatUtils.lt(tStart, 0) || FloatUtils.gt(tStart, 1)) return Optional.empty();
 
         Vec2f normal;
         if (FloatUtils.eq(tStart, tEnd))
