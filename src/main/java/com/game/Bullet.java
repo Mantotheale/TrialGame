@@ -7,7 +7,7 @@ import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.deferred.EntityMovedEvent;
-import com.game.event.instant.CollisionResolvedEvent;
+import com.game.event.instant.CanMoveEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
 import com.game.math.Vec2f;
@@ -28,7 +28,7 @@ public class Bullet implements Entity {
 
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
-    private final EventObserver<CollisionResolvedEvent> onMoveFunc = this::onMove;
+    private final EventObserver<CanMoveEvent> onMoveFunc = this::onMove;
 
 
     public Bullet(Transform2D transform, ResourceManager resourceManager, EntityManager entityManager, EventBus bus) {
@@ -40,7 +40,7 @@ public class Bullet implements Entity {
 
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
-        bus.addObserver(CollisionResolvedEvent.class, onMoveFunc);
+        bus.addObserver(CanMoveEvent.class, onMoveFunc);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class Bullet implements Entity {
             delete(bus);
     }
 
-    private void onMove(EventBus bus, CollisionResolvedEvent event) {
+    private void onMove(EventBus bus, CanMoveEvent event) {
         transform = transform.translate(velocity);
         bus.postEvent(new EntityMovedEvent(id, transform.translation().toVec2f()));
     }
@@ -67,7 +67,7 @@ public class Bullet implements Entity {
     public void delete(EventBus bus) {
         bus.removeObserver(RenderRequestEvent.class, onRenderFunc);
         bus.removeObserver(UpdateEvent.class, onUpdateFunc);
-        bus.removeObserver(CollisionResolvedEvent.class, onMoveFunc);
+        bus.removeObserver(CanMoveEvent.class, onMoveFunc);
         bus.postEvent(new EntityDeletedEvent(id));
     }
 }

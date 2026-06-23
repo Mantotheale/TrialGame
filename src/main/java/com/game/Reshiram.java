@@ -55,6 +55,7 @@ public class Reshiram implements Entity {
     }
 
     private void onUpdate(EventBus bus, UpdateEvent updateEvent) {
+        velocity = Vec2f.ZERO;
         Vec2f direction = Vec2f.ZERO;
         if (inputManager.keyState(PhysicalKey.W) == KeyState.DOWN)
             direction = direction.add(Vec2f.UP);
@@ -67,7 +68,7 @@ public class Reshiram implements Entity {
 
         if (!direction.equals(Vec2f.ZERO)) {
             float movementSpeed = 20 * (float) Game.UPDATE_TIME;
-            Vec2f velocity = direction.normalize().mul(movementSpeed);
+            velocity = direction.normalize().mul(movementSpeed);
             bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
         }
     }
