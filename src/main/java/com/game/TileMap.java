@@ -1,13 +1,18 @@
 package com.game;
 
+import com.game.collision.Collider;
+import com.game.collision.CollisionManager;
+import com.game.entity.Entity;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
+import com.game.math.Rectangle;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
 import com.game.transform.Transform2D;
 import com.game.transform.Translation2D;
 import com.game.util.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -20,11 +25,11 @@ public class TileMap implements Iterable<RenderComponent> {
     }
 
     @Override
-    public Iterator<RenderComponent> iterator() {
+    public @NotNull Iterator<RenderComponent> iterator() {
         return Collections.unmodifiableList(tiles).iterator();
     }
 
-    public static TileMap fromFile(Path path, ResourceManager resourceManager, EventBus eventBus, EntityManager entityManager) {
+    public static TileMap fromFile(Path path, ResourceManager resourceManager, EventBus eventBus, EntityManager entityManager, CollisionManager collisionManager) {
         List<RenderComponent> tiles = IOUtils.readAllLines(path).stream()
                 .filter(l -> !l.isBlank())
                 .map(l -> l.split(" "))
@@ -44,9 +49,17 @@ public class TileMap implements Iterable<RenderComponent> {
                     );
 
                     if (isSolid) {
-                        new MapElementEntity(transform, resourceManager.getTexture(tile), eventBus, entityManager);
-                        //collisionManager.addCollider(map, new RectangleCollider(new Rectangle(x, y, scaleX, scaleY) , false));
-                        //collisionManager.addCollider(map, new CircleCollider(new Vec2f(x, y), scaleX / 2, false));
+                        Entity entity = new MapElementEntity(transform, resourceManager.getTexture(tile), eventBus, entityManager);
+                        collisionManager.addCollider(
+                                entity.id(),
+                                new Collider(
+                                        new Rectangle(
+                                                transform.translation().toVec2f(),
+                                                transform.scale().toVec2f()
+                                        ),
+                                        true
+                                )
+                        );
                     }
 
                     return new RenderComponent(transform, resourceManager.getTexture(tile));

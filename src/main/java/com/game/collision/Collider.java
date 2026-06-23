@@ -1,15 +1,20 @@
 package com.game.collision;
 
+import com.game.math.IntersectionData;
+import com.game.math.IntersectionUtils;
+import com.game.math.Rectangle;
 import com.game.math.Vec2f;
 
-import java.util.Optional;
+public record Collider(Rectangle rect, boolean isFixed) {
+    public Vec2f position() {
+        return rect.center();
+    }
 
-public sealed interface Collider permits RectangleCollider, CircleCollider {
-    Collider moveToPosition(Vec2f position);
-    boolean intersects(Collider other);
-    float overlapArea(Collider other);
-    Optional<Vec2f> minimumTranslationVector(Vec2f beforeCenter, Collider other);
-    boolean isMobile();
-    Vec2f center();
-    boolean contains(Vec2f point);
+    public Collider moveTo(Vec2f position) {
+        return new Collider(new Rectangle(position, rect.width(), rect.height()), isFixed);
+    }
+
+    public Vec2f resolveCollision(Vec2f initialVelocity, IntersectionData intersectionData) {
+        return IntersectionUtils.resolveDynamicIntersection(initialVelocity, intersectionData);
+    }
 }

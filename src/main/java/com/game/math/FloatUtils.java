@@ -1,31 +1,32 @@
 package com.game.math;
 
+import java.util.Comparator;
+
 public class FloatUtils {
     private FloatUtils() { }
 
-    public static final float EPSILON = 1e-5F;
-
-    public static boolean areEqualsEps(float a, float b) {
-        return Math.abs(a - b) < EPSILON;
+    public static boolean eq(float a, float b) {
+        return Math.abs(a - b) <= MathConsts.FLOAT_ACCURACY_EPSILON;
     }
 
-    public static float avg(float... values) {
-        if (values.length == 0) throw new IllegalArgumentException("Can't take the average of 0 values");
-
-        float acc = 0;
-        for (float v: values)
-            acc += v;
-        return acc / values.length;
+    public static boolean lt(float a, float b) {
+        return a - b < -MathConsts.FLOAT_ACCURACY_EPSILON;
     }
 
-    public static float max(float... values) {
-        if (values.length == 0) throw new IllegalArgumentException("Can't take the max of 0 values");
-
-        float max = Float.MIN_VALUE;
-        for (float v: values)
-            if (v > max)
-                max = v;
-
-        return max;
+    public static boolean leq(float a, float b) {
+        return a - b <= MathConsts.FLOAT_ACCURACY_EPSILON;
     }
+
+    public static boolean gt(float a, float b) {
+        return a - b > MathConsts.FLOAT_ACCURACY_EPSILON;
+    }
+
+    public static boolean geq(float a, float b) {
+        return a - b >= -MathConsts.FLOAT_ACCURACY_EPSILON;
+    }
+
+    public final static Comparator<Float> EPS_COMPARATOR = (o1, o2) -> {
+        if (eq(o1, o2)) return 0;
+        return lt(o1, o2) ? -1 : 1;
+    };
 }

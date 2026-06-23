@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
+import com.game.collision.CollisionManager;
 import com.game.entity.Entity;
 import com.game.entity.EntityManager;
 import com.game.event.*;
@@ -34,6 +35,7 @@ public class Game {
     private final ResourceManager resourceManager;
     private final EventBus eventBus;
     private final EntityManager entityManager;
+    private final CollisionManager collisionManager;
 
     private final Entity reshiram;
     private final Entity mewtwo;
@@ -55,6 +57,7 @@ public class Game {
         eventBus.addObserver(CloseGameRequestedEvent.class, this::onCloseGameRequest);
 
         entityManager = new EntityManager(eventBus);
+        collisionManager = new CollisionManager(eventBus);
 
         window = new WindowBuilder()
                 .setTitle("Hello World!")
@@ -79,14 +82,12 @@ public class Game {
                 eventBus
         );
 
-        /*collisionManager = new CollisionManager();
-        eventBus.addObserver(collisionManager);*/
-
         map = TileMap.fromFile(
                 Path.of("src/main/resources/maps/simple_map.txt"),
                 resourceManager,
                 eventBus,
-                entityManager
+                entityManager,
+                collisionManager
         );
 
         reshiram = new Reshiram(
@@ -94,14 +95,17 @@ public class Game {
                 inputManager,
                 resourceManager,
                 eventBus,
-                entityManager
+                entityManager,
+                collisionManager
         );
+        camera.followEntity(reshiram.id());
 
         mewtwo = new MewTwo(
                 new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
                 resourceManager,
                 eventBus,
-                entityManager
+                entityManager,
+                collisionManager
         );
 
         updates = 0;
@@ -145,7 +149,7 @@ public class Game {
         eventBus.postEvent(new UpdateEvent());
         eventBus.dispatchDeferredEvents();
 
-        // CHECK COLLISIONS AND RESOLVE THEM
+        collisionManager.simulate(eventBus);
         eventBus.dispatchDeferredEvents();
         eventBus.postEvent(new CanMoveEvent());
     }

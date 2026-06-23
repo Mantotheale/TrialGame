@@ -1,83 +1,128 @@
 package com.game.collision;
 
+import com.game.entity.EntityId;
+import com.game.event.bus.EventBus;
+import com.game.event.deferred.CollisionEvent;
+import com.game.event.deferred.EntityDeletedEvent;
+import com.game.event.deferred.EntityMovedEvent;
+import com.game.event.deferred.EntityVelocityChangedEvent;
+import com.game.event.instant.CollisionsResolvedEvent;
+import com.game.math.IntersectionData;
+import com.game.math.Rectangle;
+import com.game.math.Vec2f;
+
+import java.util.*;
+
 public class CollisionManager {
+    private final Map<EntityId, ColliderState> colliders;
 
-    /*private record ColliderState(Collider before, Collider after) {
-        ColliderState movedTo(Vec2f position) {
-            return new ColliderState(before, after.moveToPosition(position));
-        }
-        ColliderState evolve() {
-            return new ColliderState(after, after);
-        }
+    public CollisionManager(EventBus bus) {
+        colliders = new HashMap<>();
+
+        bus.addObserver(EntityMovedEvent.class, this::onEntityMove);
+        bus.addObserver(EntityVelocityChangedEvent.class, this::onEntityVelocityChanged);
+        bus.addObserver(EntityDeletedEvent.class, this::onEntityDeleted);
     }
 
-    private final Map<Entity, ColliderState> colliders = new HashMap<>();
-
-    public void addCollider(Entity entity, Collider collider) {
-        colliders.put(entity, new ColliderState(collider, collider));
+    public void addCollider(EntityId id, Collider collider) {
+        colliders.put(id, new ColliderState(collider, Vec2f.ZERO));
     }
 
-    public void removeCollider(Entity entity) {
-        colliders.remove(entity);
+    public void removeCollider(EntityId id) {
+        colliders.remove(id);
     }
 
-    public void findCollisions(EventBus dispatcher) {
-        for (var e: colliders.entrySet())
-            if (e.getValue().before.isMobile())
-                resolveCollisionsFor(dispatcher, e);
-    }
+    public void simulate(EventBus bus) {
+        for (Map.Entry<EntityId, ColliderState> e: colliders.entrySet()) {
+            EntityId id = e.getKey();
+            ColliderState state = e.getValue();
 
-    private void resolveCollisionsFor(EventBus dispatcher, Map.Entry<Entity, ColliderState> entry) {
-        Vec2f beforeCenter = entry.getValue().before().center();
-        Collider resolved = entry.getValue().after();
-
-        int c = 0;
-        for (var collision : sortedCollisions(entry.getKey(), resolved)) {
-            Rectangle thisRect = ((RectangleCollider)entry.getValue().before).rectangle();
-            Rectangle collRect = ((RectangleCollider) collision.getValue().after).rectangle();
-            System.out.println("----");
-            System.out.println("Before " + entry.getValue().before);
-            System.out.println("After " + entry.getValue().after);
-            System.out.println("Collider " + collision.getValue().after);
-            Optional<Float> collTime = thisRect.intersectionTime(collRect, entry.getValue().after.center());
-            System.out.println("Collision time " + collTime);
-            collTime.ifPresent(aFloat -> System.out.println("Collision state " + thisRect.stopAtTime(entry.getValue().after.center(), aFloat)));
-            System.out.println("----");
-
-            Optional<Vec2f> optMtv = resolved.minimumTranslationVector(beforeCenter, collision.getValue().after());
-            if (optMtv.isEmpty()) continue;
-
-            System.out.println("collision number " + c + ", mtv: " + optMtv);
-            c++;
-            Vec2f mtv = optMtv.get();
-            dispatcher.pushEvent(new CollisionEvent(entry.getKey(), collision.getKey(), mtv));
-            resolved = resolved.moveToPosition(resolved.center().add(mtv));
-            System.out.println("new pos " + resolved);
+            if (!state.collider.isFixed())
+                simulateEntity(id, state, bus);
         }
     }
 
-    private List<Map.Entry<Entity, ColliderState>> sortedCollisions(Entity self, Collider subject) {
+    private void simulateEntity(EntityId id, ColliderState state, EventBus bus) {
+        Collider collider = state.collider;
+        Vec2f velocity = state.velocity;
+
+        Set<EntityId> collidedEntities = new HashSet<>();
+
+        Optional<CollisionData> optCollisionData = nextCollision(id, collider, velocity, collidedEntities);
+        while (optCollisionData.isPresent()) {
+            CollisionData collisionData = optCollisionData.get();
+            float collisionTime = collisionData.intersectionData.t();
+            Vec2f collisionPoint = collider.position().add(velocity.mul(collisionTime));
+            bus.postEvent(new CollisionEvent(id, collisionData.collidingEntity, collisionPoint));
+
+            velocity = collider.resolveCollision(velocity, collisionData.intersectionData);
+            collidedEntities.add(collisionData.collidingEntity);
+
+            optCollisionData = nextCollision(id, collider, velocity, collidedEntities);
+        }
+
+        bus.postEvent(new CollisionsResolvedEvent(id, velocity));
+    }
+
+    private Optional<CollisionData> nextCollision(EntityId id, Collider collider, Vec2f velocity, Set<EntityId> alreadyCollided) {
+        Rectangle rect = collider.rect();
+
         return colliders.entrySet().stream()
-                .filter(e -> !e.getKey().equals(self))
-                .filter(e -> e.getValue().after().intersects(subject))
-                .sorted(byDecreasingOverlapWith(subject))
-                .toList();
+                .filter(c -> !c.getKey().equals(id))
+                .filter(c -> !alreadyCollided.contains(c.getKey()))
+                .map(c ->
+                        new PossibleCollisionData(
+                                c.getKey(),
+                                rect.dynamicIntersection(velocity, c.getValue().collider.rect()),
+                                rect.center().squaredDistance(c.getValue().collider.rect().center())
+                        )
+                )
+                .filter(c -> c.intersectionData.isPresent())
+                .map(PossibleCollisionData::toCollisionData)
+                .sorted()
+                .findFirst();
     }
 
-    private Comparator<Map.Entry<Entity, ColliderState>> byDecreasingOverlapWith(Collider subject) {
-        return Comparator.comparingDouble(e ->
-                -subject.overlapArea(e.getValue().after()));
+    private void onEntityMove(EventBus bus, EntityMovedEvent event) {
+        colliders.computeIfPresent(
+                event.entityId(),
+                (_, state) -> state.positionChanged(event.position())
+        );
     }
 
-    @Override
-    public void onEvent(EventBus dispatcher, Event event) {
-        switch (event) {
-            case EntityMovedEvent(Entity entity, Vec2f position) -> {
-                ColliderState state = colliders.get(entity);
-                if (state != null) colliders.put(entity, state.movedTo(position));
-            }
-            case EndUpdateEvent() -> colliders.replaceAll((_, state) -> state.evolve());
-            default -> {}
+    private void onEntityVelocityChanged(EventBus bus, EntityVelocityChangedEvent event) {
+        colliders.computeIfPresent(
+                event.entityId(),
+                (_, state) -> state.velocityChanged(event.velocity())
+        );
+    }
+
+    private void onEntityDeleted(EventBus bus, EntityDeletedEvent event) {
+        removeCollider(event.entityId());
+    }
+
+    private record ColliderState(Collider collider, Vec2f velocity) {
+        public ColliderState positionChanged(Vec2f position) {
+            return new ColliderState(collider.moveTo(position), velocity);
         }
-    }*/
+        public ColliderState velocityChanged(Vec2f velocity) {
+            return new ColliderState(collider, velocity);
+        }
+    }
+
+    private record PossibleCollisionData(EntityId collidingEntity, Optional<IntersectionData> intersectionData, float squaredDistance) {
+        public CollisionData toCollisionData() {
+            return new CollisionData(collidingEntity, intersectionData.get(), squaredDistance);
+        }
+    }
+
+    private record CollisionData(EntityId collidingEntity, IntersectionData intersectionData, float squaredDistance) implements Comparable<CollisionData> {
+        @Override
+        public int compareTo(CollisionData o) {
+            int timesCmp = this.intersectionData.compareTo(o.intersectionData);
+            if (timesCmp != 0) return timesCmp;
+
+            return Float.compare(this.squaredDistance, o.squaredDistance);
+        }
+    }
 }

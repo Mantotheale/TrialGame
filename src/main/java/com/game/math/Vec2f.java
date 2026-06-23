@@ -1,45 +1,59 @@
 package com.game.math;
 
-import org.joml.Math;
-
 public record Vec2f(float x, float y) {
+    public static final Vec2f ZERO = new Vec2f(0, 0);
+    public static final Vec2f UP = new Vec2f(0, 1);
+    public static final Vec2f DOWN = new Vec2f(0, -1);
+    public static final Vec2f RIGHT = new Vec2f(1, 0);
+    public static final Vec2f LEFT = new Vec2f(-1, 0);
+
     public Vec2f add(Vec2f other) {
-        return new Vec2f(x + other.x, y + other.y);
+        return new Vec2f(this.x + other.x, this.y + other.y());
     }
 
-    public Vec2f subtract(Vec2f other) {
-        return new Vec2f(x - other.x, y - other.y);
+    public Vec2f sub(Vec2f other) {
+        return new Vec2f(this.x - other.x, this.y - other.y());
     }
 
-    public Vec2f mul(float scalar) {
-        return new Vec2f(x * scalar, y * scalar);
+    public Vec2f negate() {
+        return new Vec2f(-x, -y);
     }
 
-    public Vec2f normalize() {
-        float lengthSquared = x * x + y * y;
-        float invLength = Math.invsqrt(lengthSquared);
-        return new Vec2f(x * invLength, y * invLength);
+    public Vec2f mul(float s) {
+        return new Vec2f(x * s, y * s);
+    }
+
+    public float dot(Vec2f other) {
+        return this.x * other.x + this.y * other.y;
+    }
+
+    public float squaredLen() {
+        return x * x + y * y;
+    }
+
+    public float len() {
+        return (float) Math.sqrt(squaredLen());
     }
 
     public float squaredDistance(Vec2f other) {
-        float dx = x - other.x;
-        float dy = y - other.y;
+        float dx = this.x - other.x;
+        float dy = this.y - other.y;
         return dx * dx + dy * dy;
     }
 
-    public float distance(Vec2f other) {
-        float dx = x - other.x;
-        float dy = y - other.y;
-        return Math.sqrt(dx * dx + dy * dy);
+    public Vec2f normalize() {
+        if (this.equals(Vec2f.ZERO)) return Vec2f.ZERO;
+
+        float invLen = 1 / len();
+        return new Vec2f(x * invLen, y * invLen);
     }
 
-    public static Vec2f middlePoint(Vec2f a, Vec2f b) {
-        return new Vec2f(0.5f * (a.x + b.x), 0.5f * (a.y + b.y));
-    }
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
 
-    public static final Vec2f ZERO = new Vec2f(0, 0);
-    public static final Vec2f UP = new Vec2f(0, 1);
-    public static final Vec2f RIGHT = new Vec2f(1, 0);
-    public static final Vec2f DOWN = new Vec2f(0, -1);
-    public static final Vec2f LEFT = new Vec2f(-1, 0);
+        return (obj instanceof Vec2f(float x2, float y2))
+                && FloatUtils.eq(x, x2)
+                && FloatUtils.eq(y, y2);
+    }
 }
