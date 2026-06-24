@@ -1,24 +1,28 @@
 package com.game.collision;
 
-import com.game.math.IntersectionData;
-import com.game.math.IntersectionUtils;
-import com.game.math.Rectangle;
-import com.game.math.Vec2f;
+import com.game.math.*;
 
-public record Collider(Rectangle rect, boolean isFixed) {
-    public Vec2f position() {
-        return rect.center();
+import java.util.Optional;
+
+public record Collider(Shape shape, boolean isFixed) {
+    public Vec2f center() {
+        return shape.center();
     }
 
     public Collider moveTo(Vec2f position) {
-        return new Collider(new Rectangle(position, rect.width(), rect.height()), isFixed);
+        return new Collider(shape.moveTo(position), isFixed);
+    }
+
+    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Collider other) {
+        return shape.dynamicIntersection(velocity, other.shape());
     }
 
     public Vec2f resolveCollision(Vec2f initialVelocity, IntersectionData intersectionData) {
         return IntersectionUtils.resolveDynamicIntersection(initialVelocity, intersectionData);
     }
 
-    public float squaredDistance(Collider other) {
-        return this.position().squaredDistance(other.position());
+    float squaredDistance(Collider other) {
+        return this.center().squaredDistance(other.center());
+
     }
 }

@@ -79,7 +79,7 @@ public class Reshiram implements Entity {
             direction = direction.add(Vec2f.RIGHT);
 
         if (!direction.equals(Vec2f.ZERO)) {
-            float movementSpeed = 200 * (float) Game.UPDATE_TIME;
+            float movementSpeed = 25 * (float) Game.UPDATE_TIME;
             velocity = direction.normalize().mul(movementSpeed);
         }
 

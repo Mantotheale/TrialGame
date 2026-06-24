@@ -2,7 +2,7 @@ package com.game.math;
 
 import java.util.Optional;
 
-public record Rectangle(Vec2f center, float width, float height) {
+public record Rectangle(Vec2f center, float width, float height) implements Shape {
     public Rectangle {
         if (width <= 0)
             throw new IllegalArgumentException("The width of a rectangle should be positive. Was " + width);
@@ -38,19 +38,28 @@ public record Rectangle(Vec2f center, float width, float height) {
         return !FloatUtils.lt(this.top(), other.bottom());
     }
 
-    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Rectangle other) {
-        if (velocity.equals(Vec2f.ZERO))
-            if (staticIntersects(other))
-                return Optional.of(new IntersectionData(0, Vec2f.ZERO));
-            else
-                return Optional.empty();
+    @Override
+    public Shape moveTo(Vec2f position) {
+        return new Rectangle(position, width, height);
+    }
 
-        Segment segment = Segment.fromDirection(center, velocity);
-        float totalWidth = this.width + other.width;
-        float totalHeight = this.height + other.height;
-        Rectangle phantomRect = new Rectangle(other.center, totalWidth, totalHeight);
+    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Shape other) {
+        if (other instanceof Rectangle rect2) {
+            if (velocity.equals(Vec2f.ZERO))
+                if (staticIntersects(rect2))
+                    return Optional.of(new IntersectionData(0, Vec2f.ZERO));
+                else
+                    return Optional.empty();
 
-        return segment.intersection(phantomRect);
+            Segment segment = Segment.fromDirection(center, velocity);
+            float totalWidth = this.width + rect2.width;
+            float totalHeight = this.height + rect2.height;
+            Rectangle phantomRect = new Rectangle(rect2.center, totalWidth, totalHeight);
+
+            return segment.intersection(phantomRect);
+        } else {
+            throw new IllegalArgumentException("UNKNOW SHAPE");
+        }
     }
 
     @Override

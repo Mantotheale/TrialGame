@@ -5,7 +5,6 @@ import com.game.collision.CollisionManager;
 import com.game.entity.Entity;
 import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
-import com.game.event.*;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
 import com.game.event.deferred.EntityDeletedEvent;

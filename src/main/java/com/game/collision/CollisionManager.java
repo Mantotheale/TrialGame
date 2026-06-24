@@ -51,7 +51,7 @@ public class CollisionManager {
         while (optCollisionData.isPresent()) {
             CollisionData collisionData = optCollisionData.get();
             float collisionTime = collisionData.intersectionData.t();
-            Vec2f collisionPoint = collider.position().add(velocity.mul(collisionTime));
+            Vec2f collisionPoint = collider.center().add(velocity.mul(collisionTime));
             bus.postEvent(new CollisionEvent(id, collisionData.collidingEntity, collisionPoint));
 
             velocity = collider.resolveCollision(velocity, collisionData.intersectionData);
@@ -111,7 +111,7 @@ public class CollisionManager {
         public PossibleCollisionData(Collider collider, Vec2f velocity, EntityId otherEntity, Collider otherCollider) {
             this(
                    otherEntity,
-                   collider.rect().dynamicIntersection(velocity, otherCollider.rect()),
+                   collider.dynamicIntersection(velocity, otherCollider),
                    collider.squaredDistance(otherCollider)
             );
         }
