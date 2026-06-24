@@ -43,9 +43,7 @@ public record Circle(Vec2f center, float radius) implements Shape {
             float radiiSum = this.radius + circle2.radius;
             Circle phantomCircle = new Circle(circle2.center, radiiSum);
 
-            var x = Segment.fromDirection(this.center, velocity).intersection(phantomCircle);
-            System.out.println(x);
-            return x;
+            return Segment.fromDirection(this.center, velocity).intersection(phantomCircle);
         }
 
         return Optional.empty();

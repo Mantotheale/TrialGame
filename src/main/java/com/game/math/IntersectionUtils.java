@@ -13,7 +13,7 @@ public class IntersectionUtils {
         Vec2f remainderVelocity = velocity.mul(1 - t);
         float dot = remainderVelocity.dot(normal);
 
-        if (dot > 0) return velocity;
+        if (FloatUtils.geq(dot, 0)) return velocity;
         Vec2f scaledNormal = normal.mul(dot);
 
         return velocity.sub(scaledNormal);
