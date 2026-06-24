@@ -17,4 +17,8 @@ public record Collider(Rectangle rect, boolean isFixed) {
     public Vec2f resolveCollision(Vec2f initialVelocity, IntersectionData intersectionData) {
         return IntersectionUtils.resolveDynamicIntersection(initialVelocity, intersectionData);
     }
+
+    public float squaredDistance(Collider other) {
+        return this.position().squaredDistance(other.position());
+    }
 }

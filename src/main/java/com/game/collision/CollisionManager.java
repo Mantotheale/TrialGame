@@ -8,7 +8,6 @@ import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.EntityVelocityChangedEvent;
 import com.game.event.instant.CollisionsResolvedEvent;
 import com.game.math.IntersectionData;
-import com.game.math.Rectangle;
 import com.game.math.Vec2f;
 
 import java.util.*;
@@ -65,18 +64,15 @@ public class CollisionManager {
     }
 
     private Optional<CollisionData> nextCollision(EntityId id, Collider collider, Vec2f velocity, Set<EntityId> alreadyCollided) {
-        Rectangle rect = collider.rect();
-
         return colliders.entrySet().stream()
                 .filter(c -> !c.getKey().equals(id))
                 .filter(c -> !alreadyCollided.contains(c.getKey()))
-                .map(c ->
-                        new PossibleCollisionData(
-                                c.getKey(),
-                                rect.dynamicIntersection(velocity, c.getValue().collider.rect()),
-                                rect.center().squaredDistance(c.getValue().collider.rect().center())
-                        )
-                )
+                .map(c -> new PossibleCollisionData(
+                        collider,
+                        velocity,
+                        c.getKey(),
+                        c.getValue().collider
+                ))
                 .filter(c -> c.intersectionData.isPresent())
                 .map(PossibleCollisionData::toCollisionData)
                 .sorted()
@@ -105,14 +101,23 @@ public class CollisionManager {
         public ColliderState positionChanged(Vec2f position) {
             return new ColliderState(collider.moveTo(position), velocity);
         }
+
         public ColliderState velocityChanged(Vec2f velocity) {
             return new ColliderState(collider, velocity);
         }
     }
 
     private record PossibleCollisionData(EntityId collidingEntity, Optional<IntersectionData> intersectionData, float squaredDistance) {
+        public PossibleCollisionData(Collider collider, Vec2f velocity, EntityId otherEntity, Collider otherCollider) {
+            this(
+                   otherEntity,
+                   collider.rect().dynamicIntersection(velocity, otherCollider.rect()),
+                   collider.squaredDistance(otherCollider)
+            );
+        }
+
         public CollisionData toCollisionData() {
-            return new CollisionData(collidingEntity, intersectionData.get(), squaredDistance);
+            return new CollisionData(collidingEntity, intersectionData.orElseThrow(), squaredDistance);
         }
     }
 
