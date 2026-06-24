@@ -31,11 +31,24 @@ public record Rectangle(Vec2f center, float width, float height) implements Shap
         return center.y() + 0.5f * height;
     }
 
-    public boolean staticIntersects(Rectangle other) {
-        if (FloatUtils.gt(this.left(), other.right())) return false;
-        if (FloatUtils.lt(this.right(), other.left())) return false;
-        if (FloatUtils.gt(this.bottom(), other.top())) return false;
-        return !FloatUtils.lt(this.top(), other.bottom());
+    @Override
+    public boolean contains(Vec2f position) {
+        return FloatUtils.geq(position.x(), left())
+                && FloatUtils.leq(position.x(), right())
+                && FloatUtils.geq(position.y(), bottom())
+                && FloatUtils.leq(position.y(), top());
+    }
+
+    @Override
+    public boolean staticIntersects(Shape other) {
+        if (other instanceof Rectangle rect) {
+            if (FloatUtils.gt(this.left(), rect.right())) return false;
+            if (FloatUtils.lt(this.right(), rect.left())) return false;
+            if (FloatUtils.gt(this.bottom(), rect.top())) return false;
+            return !FloatUtils.lt(this.top(), rect.bottom());
+        } else {
+            throw new IllegalArgumentException("UNKNOWN SHAPE");
+        }
     }
 
     @Override
