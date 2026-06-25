@@ -17,12 +17,13 @@ import com.game.event.instant.UpdateEvent;
 import com.game.input.InputManager;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalKey;
-import com.game.math.Circle;
+import com.game.math.Rectangle;
 import com.game.math.Vec2f;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Transform2D;
+import com.game.transform.Translation2D;
 
 public class Reshiram implements Entity {
     private final EntityId id;
@@ -56,14 +57,14 @@ public class Reshiram implements Entity {
         collisionManager.addCollider(
                 id,
                 new Collider(
-                        new Circle(
+                        /*new Circle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f).x() / 2
-                        )
-                        /*new Rectangle(
+                        )*/
+                        new Rectangle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f)
-                        )*/,
+                        ),
                         false
                 )
         );
@@ -93,7 +94,9 @@ public class Reshiram implements Entity {
     private void onCollisionsResolved(EventBus bus, CollisionsResolvedEvent event) {
         if (event.entityId().equals(id)) {
             this.velocity = event.finalVelocity();
-            bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
+            this.transform = new Transform2D(new Translation2D(event.finalPosition()), transform.scale(), transform.zIndex());
+            //bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
+            bus.postEvent(new EntityMovedEvent(id, transform.translation().toVec2f()));
         }
     }
 

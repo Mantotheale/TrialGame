@@ -151,7 +151,7 @@ public class Game {
 
         collisionManager.simulate(eventBus);
         eventBus.dispatchDeferredEvents();
-        eventBus.postEvent(new CanMoveEvent());
+        //eventBus.postEvent(new CanMoveEvent());
     }
 
     private void oneSecUpdate() {

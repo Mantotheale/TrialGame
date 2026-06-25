@@ -3,6 +3,10 @@ package com.game.transform;
 import com.game.math.Vec2f;
 
 public record Translation2D(float x, float y) {
+    public Translation2D(Vec2f t) {
+        this(t.x(), t.y());
+    }
+
     public Vec2f transform(Vec2f vec) {
         return new Vec2f(vec.x() + x, vec.y() + y);
     }
