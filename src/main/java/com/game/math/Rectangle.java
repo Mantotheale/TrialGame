@@ -48,7 +48,26 @@ public record Rectangle(Vec2f center, float width, float height) implements Shap
                 if (FloatUtils.gt(this.bottom(), rect.top())) yield false;
                 yield !FloatUtils.lt(this.top(), rect.bottom());
             }
-            case Circle circle -> Shape.staticRectCircleIntersects(this, circle);
+            case Circle circle -> {
+                Vec2f rectCenter = this.center();
+                Vec2f circleCenter = circle.center();
+                float halfRectWidth = 0.5f * this.width();
+                float halfRectHeight = 0.5f * this.height();
+                float circleRadius = circle.radius();
+
+                float dx = Math.abs(rectCenter.x() - circleCenter.x());
+                float dy = Math.abs(rectCenter.y() - circleCenter.y());
+
+                if (FloatUtils.gt(dx, halfRectWidth + circleRadius)) yield false;
+                if (FloatUtils.gt(dy, halfRectHeight + circleRadius)) yield false;
+
+                if (FloatUtils.leq(dx, halfRectWidth)) yield true;
+                if (FloatUtils.leq(dy, halfRectHeight)) yield true;
+
+                float leftoverX = dx - halfRectWidth;
+                float leftoverY = dy - halfRectHeight;
+                yield leftoverX * leftoverX + leftoverY * leftoverY <= circleRadius * circleRadius;
+            }
         };
     }
 
@@ -57,23 +76,25 @@ public record Rectangle(Vec2f center, float width, float height) implements Shap
         return new Rectangle(position, width, height);
     }
 
-    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Shape other) {
-        if (velocity.equals(Vec2f.ZERO))
-            if (staticIntersects(other))
-                return Optional.of(new IntersectionData(0, Vec2f.ZERO));
-            else
-                return Optional.empty();
-
+    @Override
+    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Shape other, Vec2f otherVelocity) {
         return switch (other) {
             case Rectangle rect2 -> {
-                Segment segment = Segment.fromDirection(center, velocity);
+                Vec2f relativeVelocity = velocity.sub(otherVelocity);
+                if (relativeVelocity.equals(Vec2f.ZERO))
+                    if (staticIntersects(other))
+                        yield Optional.of(new IntersectionData(0, Vec2f.ZERO));
+                    else
+                        yield Optional.empty();
+
+                Segment segment = Segment.fromDirection(center, relativeVelocity);
                 float totalWidth = this.width + rect2.width;
                 float totalHeight = this.height + rect2.height;
                 Rectangle phantomRect = new Rectangle(rect2.center, totalWidth, totalHeight);
 
                 yield segment.intersection(phantomRect);
             }
-            case Circle circle -> circle.dynamicIntersection(velocity.negate(), this)
+            case Circle circle -> circle.dynamicIntersection(otherVelocity, this, velocity)
                     .map(data -> new IntersectionData(data.t(), data.normal().negate()));
         };
     }

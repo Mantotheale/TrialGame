@@ -52,17 +52,23 @@ public class CollisionManager {
 
             EntityId e1 = collision.e1;
             EntityId e2 = collision.e2;
-            ColliderState cs = colliders.get(e1);
-            Collider collider = cs.collider;
-            Vec2f v1 = cs.velocity;
+            ColliderState cs1 = colliders.get(e1);
+            ColliderState cs2 = colliders.get(e2);
+            Collider collider1 = cs1.collider;
+            Collider collider2 = cs2.collider;
+            Vec2f v1 = cs1.velocity;
+            Vec2f v2 = cs2.velocity;
 
             IntersectionData data = collision.intersectionData;
             float dt = data.t();
             Vec2f normal = data.normal();
 
             colliders.replaceAll((_, s) -> s.advance(dt));
-            Vec2f resolvedVelocity = collider.resolveCollision(v1, normal);
-            colliders.computeIfPresent(e1, (_, s) -> s.velocityChanged(resolvedVelocity));
+            Vec2f resolvedVelocity1 = collider1.resolveCollision(v1, normal);
+            Vec2f resolvedVelocity2 = collider2.resolveCollision(v2, normal.negate());
+            colliders.computeIfPresent(e1, (_, s) -> s.velocityChanged(resolvedVelocity1));
+            if (!collider2.isFixed())
+                colliders.computeIfPresent(e2, (_, s) -> s.velocityChanged(resolvedVelocity2));
             bus.postEvent(new CollisionEvent(e1, e2));
 
             time += dt;
@@ -84,9 +90,10 @@ public class CollisionManager {
                             ColliderState cs1 = e1.getValue();
                             EntityId id2 = e2.getKey();
                             ColliderState cs2 = e2.getValue();
+                            Vec2f relativeVelocity = cs1.velocity.sub(cs2.velocity);
 
-                            return cs1.collider.dynamicIntersection(cs1.velocity, cs2.collider)
-                                    .filter(data -> FloatUtils.lt(cs1.velocity.dot(data.normal()), 0))
+                            return cs1.collider.dynamicIntersection(cs1.velocity, cs2.collider, cs2.velocity)
+                                    .filter(data -> FloatUtils.lt(relativeVelocity.dot(data.normal()), 0))
                                     .filter(data -> FloatUtils.leq(time + data.t(), 1))
                                     .map(data -> {
                                         float squaredDistance = cs1.collider().squaredDistance(cs2.collider());

@@ -61,7 +61,7 @@ public class MewTwo implements Entity {
     private void onUpdate(EventBus bus, UpdateEvent event) {
         frames++;
 
-        if (frames == 60) {
+        if (frames == 180) {
             new Bullet(
                     new Transform2D(
                             transform.translateBy(new Translation2D(-1, 0)).translation(),
@@ -70,7 +70,8 @@ public class MewTwo implements Entity {
                     ),
                     event.resourceManager(),
                     event.entityManager(),
-                    bus
+                    bus,
+                    event.collisionManager()
             );
             frames = 0;
         }

@@ -13,8 +13,8 @@ public record Collider(Shape shape, boolean isFixed) {
         return new Collider(shape.moveTo(position), isFixed);
     }
 
-    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Collider other) {
-        return shape.dynamicIntersection(velocity, other.shape());
+    public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Collider other, Vec2f otherVelocity) {
+        return shape.dynamicIntersection(velocity, other.shape(), otherVelocity);
     }
 
     public Vec2f resolveCollision(Vec2f velocity, Vec2f normal) {

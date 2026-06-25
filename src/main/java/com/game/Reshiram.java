@@ -91,8 +91,8 @@ public class Reshiram implements Entity {
         this.velocity = state.velocity();
         this.transform = this.transform.translateTo(Translation2D.fromVec2f(state.position()));
 
-        if (!velocity.equals(Vec2f.ZERO))
-            bus.postEvent(new EntityMovedEvent(id, state.position()));
+        bus.postEvent(new EntityMovedEvent(id, state.position()));
+        bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
     }
 
     private void onRender(EventBus bus, RenderRequestEvent event) {
