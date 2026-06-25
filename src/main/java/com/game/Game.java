@@ -91,13 +91,12 @@ public class Game {
 
         reshiram = new Reshiram(
                 new Transform2D(new Translation2D(0, 0), Scale2D.UNIT, 2),
-                inputManager,
                 resourceManager,
                 eventBus,
                 entityManager,
                 collisionManager
         );
-        camera.followEntity(reshiram.id());
+        camera.setEntityToFollow(() -> collisionManager.state(reshiram.id()).position());
 
         mewtwo = new MewTwo(
                 new Transform2D(new Translation2D(4, 0), Scale2D.UNIT, 2),
@@ -145,11 +144,14 @@ public class Game {
     private void update() {
         updates++;
 
-        eventBus.postEvent(new UpdateEvent());
+        eventBus.postEvent(new UpdateEvent(inputManager, resourceManager, entityManager, collisionManager));
         eventBus.dispatchDeferredEvents();
 
         collisionManager.simulate(eventBus);
         eventBus.postEvent(new PhysicsUpdatedEvent(collisionManager));
+        eventBus.dispatchDeferredEvents();
+
+        eventBus.postEvent(new LateUpdateEvent());
         eventBus.dispatchDeferredEvents();
     }
 

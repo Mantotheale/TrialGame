@@ -48,7 +48,6 @@ public class CollisionManager {
 
         Optional<Collision> optCollision = nextCollision(time);
         while (optCollision.isPresent() && FloatUtils.lt(time, 1)) {
-            System.out.println("Collision!");
             Collision collision = optCollision.get();
 
             EntityId e1 = collision.e1;

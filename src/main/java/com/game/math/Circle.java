@@ -57,8 +57,12 @@ public record Circle(Vec2f center, float radius) implements Shape {
                 Optional<IntersectionData> rectIntersect = segment.intersection(phantomRect);
                 rectIntersect.ifPresent(x -> {
                     Vec2f point = center.add(velocity.mul(x.t()));
-                    if (FloatUtils.geq(point.x(), phantomRect.left()) && FloatUtils.leq(point.x(), phantomRect.right())
-                            || FloatUtils.geq(point.y(), phantomRect.bottom()) && FloatUtils.leq(point.y(), phantomRect.top()))
+
+                    boolean isFlatEdgeHit =
+                            (FloatUtils.geq(point.x(), rect.left()) && FloatUtils.leq(point.x(), rect.right())) ||
+                                    (FloatUtils.geq(point.y(), rect.bottom()) && FloatUtils.leq(point.y(), rect.top()));
+
+                    if (isFlatEdgeHit)
                         intersections.add(x);
                 });
 

@@ -58,22 +58,24 @@ public record Rectangle(Vec2f center, float width, float height) implements Shap
     }
 
     public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Shape other) {
-        if (other instanceof Rectangle rect2) {
-            if (velocity.equals(Vec2f.ZERO))
-                if (staticIntersects(rect2))
-                    return Optional.of(new IntersectionData(0, Vec2f.ZERO));
-                else
-                    return Optional.empty();
+        if (velocity.equals(Vec2f.ZERO))
+            if (staticIntersects(other))
+                return Optional.of(new IntersectionData(0, Vec2f.ZERO));
+            else
+                return Optional.empty();
 
-            Segment segment = Segment.fromDirection(center, velocity);
-            float totalWidth = this.width + rect2.width;
-            float totalHeight = this.height + rect2.height;
-            Rectangle phantomRect = new Rectangle(rect2.center, totalWidth, totalHeight);
+        return switch (other) {
+            case Rectangle rect2 -> {
+                Segment segment = Segment.fromDirection(center, velocity);
+                float totalWidth = this.width + rect2.width;
+                float totalHeight = this.height + rect2.height;
+                Rectangle phantomRect = new Rectangle(rect2.center, totalWidth, totalHeight);
 
-            return segment.intersection(phantomRect);
-        } else {
-            throw new IllegalArgumentException("UNKNOW SHAPE");
-        }
+                yield segment.intersection(phantomRect);
+            }
+            case Circle circle -> circle.dynamicIntersection(velocity.negate(), this)
+                    .map(data -> new IntersectionData(data.t(), data.normal().negate()));
+        };
     }
 
     @Override

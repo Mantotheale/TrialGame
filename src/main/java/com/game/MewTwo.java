@@ -10,7 +10,7 @@ import com.game.event.bus.EventObserver;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
-import com.game.math.Rectangle;
+import com.game.math.Circle;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
@@ -23,8 +23,6 @@ public class MewTwo implements Entity {
     private final Transform2D transform;
     private final Texture texture;
     private int frames;
-    private final ResourceManager resourceManager;
-    private final EntityManager entityManager;
 
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
@@ -33,8 +31,6 @@ public class MewTwo implements Entity {
         this.transform = transform;
         this.texture = resourceManager.getTexture(Tile.MEWTWO);
         frames = 0;
-        this.resourceManager = resourceManager;
-        this.entityManager = entityManager;
 
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
@@ -44,14 +40,14 @@ public class MewTwo implements Entity {
         collisionManager.addCollider(
                 id,
                 new Collider(
-                        /*new Circle(
+                        new Circle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f).x() / 2
-                        )*/
+                        )/*
                         new Rectangle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f)
-                        ),
+                        )*/,
                         true
                 )
         );
@@ -72,8 +68,8 @@ public class MewTwo implements Entity {
                             Scale2D.UNIT,
                             3
                     ),
-                    resourceManager,
-                    entityManager,
+                    event.resourceManager(),
+                    event.entityManager(),
                     bus
             );
             frames = 0;
