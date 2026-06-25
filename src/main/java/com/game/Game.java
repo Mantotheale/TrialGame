@@ -11,7 +11,6 @@ import com.game.event.bus.EventBus;
 import com.game.event.instant.*;
 import com.game.input.*;
 import com.game.renderer.Renderer;
-import com.game.renderer.texture.*;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.*;
 import com.game.window.Window;
@@ -150,8 +149,8 @@ public class Game {
         eventBus.dispatchDeferredEvents();
 
         collisionManager.simulate(eventBus);
+        eventBus.postEvent(new PhysicsUpdatedEvent(collisionManager));
         eventBus.dispatchDeferredEvents();
-        //eventBus.postEvent(new CanMoveEvent());
     }
 
     private void oneSecUpdate() {

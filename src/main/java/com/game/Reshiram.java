@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.collision.Collider;
 import com.game.collision.CollisionManager;
+import com.game.collision.PhysicsState;
 import com.game.entity.Entity;
 import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
@@ -10,10 +11,7 @@ import com.game.event.bus.EventObserver;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.EntityVelocityChangedEvent;
-import com.game.event.instant.CanMoveEvent;
-import com.game.event.instant.CollisionsResolvedEvent;
-import com.game.event.instant.RenderRequestEvent;
-import com.game.event.instant.UpdateEvent;
+import com.game.event.instant.*;
 import com.game.input.InputManager;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalKey;
@@ -33,8 +31,7 @@ public class Reshiram implements Entity {
     private Vec2f velocity;
 
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
-    private final EventObserver<CollisionsResolvedEvent> onCollisionsResolvedFunc = this::onCollisionsResolved;
-    private final EventObserver<CanMoveEvent> onCanMoveFunc = this::onCanMove;
+    private final EventObserver<PhysicsUpdatedEvent> onPhysicsUpdated = this::onPhysicsUpdated;
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
 
     @Override
@@ -49,8 +46,7 @@ public class Reshiram implements Entity {
         this.velocity = Vec2f.ZERO;
 
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
-        bus.addObserver(CollisionsResolvedEvent.class, onCollisionsResolvedFunc);
-        bus.addObserver(CanMoveEvent.class, onCanMoveFunc);
+        bus.addObserver(PhysicsUpdatedEvent.class, onPhysicsUpdated);
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
 
         this.id = entityManager.registerEntity(this);
@@ -91,18 +87,13 @@ public class Reshiram implements Entity {
         bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
     }
 
-    private void onCollisionsResolved(EventBus bus, CollisionsResolvedEvent event) {
-        if (event.entityId().equals(id)) {
-            this.velocity = event.finalVelocity();
-            this.transform = new Transform2D(new Translation2D(event.finalPosition()), transform.scale(), transform.zIndex());
-            //bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
-            bus.postEvent(new EntityMovedEvent(id, transform.translation().toVec2f()));
-        }
-    }
+    private void onPhysicsUpdated(EventBus bus, PhysicsUpdatedEvent event) {
+        PhysicsState state = event.collisionManager().state(id);
+        this.velocity = state.velocity();
+        this.transform = this.transform.translateTo(Translation2D.fromVec2f(state.position()));
 
-    private void onCanMove(EventBus bus, CanMoveEvent event) {
-        transform = transform.translate(velocity);
-        bus.postEvent(new EntityMovedEvent(id, transform.translation().toVec2f()));
+        if (!velocity.equals(Vec2f.ZERO))
+            bus.postEvent(new EntityMovedEvent(id, state.position()));
     }
 
     private void onRender(EventBus bus, RenderRequestEvent event) {
@@ -112,8 +103,7 @@ public class Reshiram implements Entity {
     @Override
     public void delete(EventBus bus) {
         bus.removeObserver(UpdateEvent.class, onUpdateFunc);
-        bus.removeObserver(CollisionsResolvedEvent.class, onCollisionsResolvedFunc);
-        bus.removeObserver(CanMoveEvent.class, onCanMoveFunc);
+        bus.removeObserver(PhysicsUpdatedEvent.class, onPhysicsUpdated);
         bus.removeObserver(RenderRequestEvent.class, onRenderFunc);
 
         bus.postEvent(new EntityDeletedEvent(id));

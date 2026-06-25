@@ -6,8 +6,7 @@ import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
 import com.game.event.deferred.EntityDeletedEvent;
-import com.game.event.deferred.EntityMovedEvent;
-import com.game.event.instant.CanMoveEvent;
+import com.game.event.instant.PhysicsUpdatedEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
 import com.game.math.Vec2f;
@@ -24,11 +23,11 @@ public class Bullet implements Entity {
     private Transform2D transform;
     private final Texture texture;
     int elapsedUpdates;
-    private final Vec2f velocity;
+    private Vec2f velocity;
 
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
-    private final EventObserver<CanMoveEvent> onMoveFunc = this::onMove;
+    private final EventObserver<PhysicsUpdatedEvent> onPhysicsUpdateFunc = this::onPhysicsUpdate;
 
 
     public Bullet(Transform2D transform, ResourceManager resourceManager, EntityManager entityManager, EventBus bus) {
@@ -40,7 +39,7 @@ public class Bullet implements Entity {
 
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
-        bus.addObserver(CanMoveEvent.class, onMoveFunc);
+        bus.addObserver(PhysicsUpdatedEvent.class, onPhysicsUpdateFunc);
     }
 
     @Override
@@ -58,16 +57,17 @@ public class Bullet implements Entity {
             delete(bus);
     }
 
-    private void onMove(EventBus bus, CanMoveEvent event) {
-        transform = transform.translate(velocity);
-        bus.postEvent(new EntityMovedEvent(id, transform.translation().toVec2f()));
-    }
+    private void onPhysicsUpdate(EventBus bus, PhysicsUpdatedEvent event) {
+        /*PhysicsState state = event.collisionManager().state(id);
+        this.velocity = state.velocity();
+        this.transform = this.transform.translateTo(Translation2D.fromVec2f(state.position()));
+    */}
 
     @Override
     public void delete(EventBus bus) {
         bus.removeObserver(RenderRequestEvent.class, onRenderFunc);
         bus.removeObserver(UpdateEvent.class, onUpdateFunc);
-        bus.removeObserver(CanMoveEvent.class, onMoveFunc);
+        bus.removeObserver(PhysicsUpdatedEvent.class, onPhysicsUpdateFunc);
         bus.postEvent(new EntityDeletedEvent(id));
     }
 }

@@ -16,6 +16,7 @@ import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
 import com.game.transform.Transform2D;
+import com.game.transform.Translation2D;
 
 public class MewTwo implements Entity {
     private final EntityId id;
@@ -67,7 +68,7 @@ public class MewTwo implements Entity {
         if (frames == 60) {
             new Bullet(
                     new Transform2D(
-                            transform.translate(-1, 0).translation(),
+                            transform.translateBy(new Translation2D(-1, 0)).translation(),
                             Scale2D.UNIT,
                             3
                     ),

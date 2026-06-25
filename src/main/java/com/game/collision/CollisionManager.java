@@ -6,7 +6,6 @@ import com.game.event.deferred.CollisionEvent;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.EntityVelocityChangedEvent;
-import com.game.event.instant.CollisionsResolvedEvent;
 import com.game.math.FloatUtils;
 import com.game.math.IntersectionData;
 import com.game.math.Vec2f;
@@ -27,6 +26,17 @@ public class CollisionManager {
 
     public void addCollider(EntityId id, Collider collider) {
         colliders.put(id, new ColliderState(collider, Vec2f.ZERO));
+    }
+
+    public boolean isContained(EntityId id) {
+        return colliders.containsKey(id);
+    }
+
+    public PhysicsState state(EntityId id) {
+        ColliderState s = colliders.get(id);
+        if (s == null) throw new NoSuchElementException("A collider associated with id " + id + " doesn't exist in the collision manager");
+
+        return new PhysicsState(s.collider.center(), s.velocity);
     }
 
     public void removeCollider(EntityId id) {
@@ -61,12 +71,6 @@ public class CollisionManager {
 
         float remainingTime = 1 - time;
         colliders.replaceAll((_, s) -> s.advance(remainingTime));
-
-        for (Map.Entry<EntityId, ColliderState> e: colliders.entrySet()) {
-            EntityId id = e.getKey();
-            ColliderState state = e.getValue();
-            bus.postEvent(new CollisionsResolvedEvent(id, state.velocity, state.collider.center()));
-        }
     }
 
 

@@ -7,16 +7,12 @@ public record Transform2D(Translation2D translation, Scale2D scale, int zIndex) 
         return translation.transform(scale.transform(vec));
     }
 
-    public Transform2D translate(Translation2D translation) {
+    public Transform2D translateBy(Translation2D translation) {
         return new Transform2D(this.translation.compose(translation), scale, zIndex);
     }
 
-    public Transform2D translate(float x, float y) {
-        return new Transform2D(this.translation.compose(x, y), scale, zIndex);
-    }
-
-    public Transform2D translate(Vec2f vec) {
-        return new Transform2D(this.translation.compose(vec.x(), vec.y()), scale, zIndex);
+    public Transform2D translateTo(Translation2D target) {
+        return new Transform2D(target, scale, zIndex);
     }
 
     public Transform2D scale(float s) {
