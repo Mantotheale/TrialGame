@@ -17,8 +17,8 @@ public record Collider(Shape shape, boolean isFixed) {
         return shape.dynamicIntersection(velocity, other.shape());
     }
 
-    public Vec2f resolveCollision(Vec2f initialVelocity, IntersectionData intersectionData) {
-        return IntersectionUtils.resolveDynamicIntersection(initialVelocity, intersectionData);
+    public Vec2f resolveCollision(Vec2f velocity, Vec2f normal) {
+        return velocity.reject(normal);
     }
 
     float squaredDistance(Collider other) {

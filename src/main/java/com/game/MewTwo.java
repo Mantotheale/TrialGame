@@ -10,7 +10,7 @@ import com.game.event.bus.EventObserver;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
-import com.game.math.Rectangle;
+import com.game.math.Circle;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
@@ -19,7 +19,7 @@ import com.game.transform.Transform2D;
 
 public class MewTwo implements Entity {
     private final EntityId id;
-    private Transform2D transform;
+    private final Transform2D transform;
     private final Texture texture;
     private int frames;
     private final ResourceManager resourceManager;
@@ -43,14 +43,14 @@ public class MewTwo implements Entity {
         collisionManager.addCollider(
                 id,
                 new Collider(
-                        /*new Circle(
+                        new Circle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f).x() / 2
-                        )*/
+                        )/*
                         new Rectangle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f)
-                        ),
+                        )*/,
                         true
                 )
         );

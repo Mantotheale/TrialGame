@@ -17,7 +17,7 @@ import com.game.event.instant.UpdateEvent;
 import com.game.input.InputManager;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalKey;
-import com.game.math.Rectangle;
+import com.game.math.Circle;
 import com.game.math.Vec2f;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
@@ -57,14 +57,14 @@ public class Reshiram implements Entity {
         collisionManager.addCollider(
                 id,
                 new Collider(
-                        /*new Circle(
+                        new Circle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f).x() / 2
-                        )*/
+                        )/*
                         new Rectangle(
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f)
-                        ),
+                        )*/,
                         false
                 )
         );

@@ -48,6 +48,10 @@ public record Vec2f(float x, float y) {
         return new Vec2f(x * invLen, y * invLen);
     }
 
+    public Vec2f reject(Vec2f normal) {
+        return this.sub(normal.mul(this.dot(normal)));
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
