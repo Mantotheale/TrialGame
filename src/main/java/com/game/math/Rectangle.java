@@ -41,14 +41,15 @@ public record Rectangle(Vec2f center, float width, float height) implements Shap
 
     @Override
     public boolean staticIntersects(Shape other) {
-        if (other instanceof Rectangle rect) {
-            if (FloatUtils.gt(this.left(), rect.right())) return false;
-            if (FloatUtils.lt(this.right(), rect.left())) return false;
-            if (FloatUtils.gt(this.bottom(), rect.top())) return false;
-            return !FloatUtils.lt(this.top(), rect.bottom());
-        } else {
-            throw new IllegalArgumentException("UNKNOWN SHAPE");
-        }
+        return switch (other) {
+            case Rectangle rect -> {
+                if (FloatUtils.gt(this.left(), rect.right())) yield false;
+                if (FloatUtils.lt(this.right(), rect.left())) yield false;
+                if (FloatUtils.gt(this.bottom(), rect.top())) yield false;
+                yield !FloatUtils.lt(this.top(), rect.bottom());
+            }
+            case Circle circle -> Shape.staticRectCircleIntersects(this, circle);
+        };
     }
 
     @Override

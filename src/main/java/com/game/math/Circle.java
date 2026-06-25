@@ -1,5 +1,8 @@
 package com.game.math;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 public record Circle(Vec2f center, float radius) implements Shape {
@@ -20,32 +23,79 @@ public record Circle(Vec2f center, float radius) implements Shape {
 
     @Override
     public boolean staticIntersects(Shape other) {
-        if (other instanceof Circle(Vec2f c2, float r2)) {
-            float radiiSum = this.radius + r2;
-            return this.center.squaredDistance(c2) <= radiiSum * radiiSum;
-        }
-
-        return false;
-
-        //throw new IllegalArgumentException("UNKNOWN SHAPE");
+        return switch (other) {
+            case Circle(Vec2f c2, float r2) -> {
+                float radiiSum = this.radius + r2;
+                yield this.center.squaredDistance(c2) <= radiiSum * radiiSum;
+            }
+            case Rectangle rect -> Shape.staticRectCircleIntersects(rect, this);
+        };
     }
 
     @Override
     public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Shape other) {
-        if (other instanceof Circle circle2) {
-            if (velocity.equals(Vec2f.ZERO)) {
-                if (staticIntersects(circle2))
-                    return Optional.of(new IntersectionData(0, Vec2f.ZERO));
-                else
-                    return Optional.empty();
+        if (velocity.equals(Vec2f.ZERO))
+            if (staticIntersects(other))
+                return Optional.of(new IntersectionData(0, Vec2f.ZERO));
+            else
+                return Optional.empty();
+
+        return switch (other) {
+            case Circle circle2 -> {
+                float radiiSum = this.radius + circle2.radius;
+                Circle phantomCircle = new Circle(circle2.center, radiiSum);
+
+                yield Segment.fromDirection(this.center, velocity).intersection(phantomCircle);
             }
+            case Rectangle rect -> {
+                Segment segment = Segment.fromDirection(center, velocity);
+                List<IntersectionData> intersections = new ArrayList<>();
 
-            float radiiSum = this.radius + circle2.radius;
-            Circle phantomCircle = new Circle(circle2.center, radiiSum);
+                float sumW = (radius * 2) + rect.width();
+                float sumH = (radius * 2) + rect.height();
+                Rectangle phantomRect = new Rectangle(rect.center(), sumW, sumH);
+                Optional<IntersectionData> rectIntersect = segment.intersection(phantomRect);
+                rectIntersect.ifPresent(x -> {
+                    Vec2f point = center.add(velocity.mul(x.t()));
+                    if (FloatUtils.geq(point.x(), phantomRect.left()) && FloatUtils.leq(point.x(), phantomRect.right())
+                            || FloatUtils.geq(point.y(), phantomRect.bottom()) && FloatUtils.leq(point.y(), phantomRect.top()))
+                        intersections.add(x);
+                });
 
-            return Segment.fromDirection(this.center, velocity).intersection(phantomCircle);
-        }
+                Circle phantomCircle = new Circle(new Vec2f(rect.right(), rect.top()), radius);
+                Optional<IntersectionData> circIntersect = segment.intersection(phantomCircle);
+                circIntersect.ifPresent(x -> {
+                    Vec2f point = center.add(velocity.mul(x.t()));
+                    if (FloatUtils.geq(point.x(), rect.right()) && FloatUtils.geq(point.y(), rect.top()))
+                        intersections.add(x);
+                });
 
-        return Optional.empty();
+                phantomCircle = new Circle(new Vec2f(rect.right(), rect.bottom()), radius);
+                circIntersect = segment.intersection(phantomCircle);
+                circIntersect.ifPresent(x -> {
+                    Vec2f point = center.add(velocity.mul(x.t()));
+                    if (FloatUtils.geq(point.x(), rect.right()) && FloatUtils.leq(point.y(), rect.bottom()))
+                        intersections.add(x);
+                });
+
+                phantomCircle = new Circle(new Vec2f(rect.left(), rect.bottom()), radius);
+                circIntersect = segment.intersection(phantomCircle);
+                circIntersect.ifPresent(x -> {
+                    Vec2f point = center.add(velocity.mul(x.t()));
+                    if (FloatUtils.leq(point.x(), rect.left()) && FloatUtils.leq(point.y(), rect.bottom()))
+                        intersections.add(x);
+                });
+
+                phantomCircle = new Circle(new Vec2f(rect.left(), rect.top()), radius);
+                circIntersect = segment.intersection(phantomCircle);
+                circIntersect.ifPresent(x -> {
+                    Vec2f point = center.add(velocity.mul(x.t()));
+                    if (FloatUtils.leq(point.x(), rect.left()) && FloatUtils.geq(point.y(), rect.top()))
+                        intersections.add(x);
+                });
+
+                yield intersections.stream().min(Comparator.naturalOrder());
+            }
+        };
     }
 }

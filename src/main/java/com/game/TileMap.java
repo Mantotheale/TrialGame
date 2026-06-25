@@ -5,7 +5,7 @@ import com.game.collision.CollisionManager;
 import com.game.entity.Entity;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
-import com.game.math.Circle;
+import com.game.math.Rectangle;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
@@ -53,14 +53,14 @@ public class TileMap implements Iterable<RenderComponent> {
                         collisionManager.addCollider(
                                 entity.id(),
                                 new Collider(
-                                        new Circle(
+                                        /*new Circle(
                                                 transform.translation().toVec2f(),
                                                 transform.scale().toVec2f().x() / 2
-                                        )
-                                        /*new Rectangle(
+                                        )*/
+                                        new Rectangle(
                                                 transform.translation().toVec2f(),
                                                 transform.scale().toVec2f()
-                                        )*/,
+                                        ),
                                         true
                                 )
                         );
