@@ -4,10 +4,12 @@ import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
 import com.game.collision.CollisionManager;
 import com.game.entity.Entity;
+import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
 import com.game.event.*;
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
+import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.instant.*;
 import com.game.input.*;
 import com.game.renderer.Renderer;
@@ -17,6 +19,8 @@ import com.game.window.Window;
 import com.game.window.WindowBuilder;
 
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -45,6 +49,8 @@ public class Game {
     private int updates;
     private int frames;
     private int elapsedSeconds;
+
+    private final Set<EntityId> bullets = new HashSet<>();
 
     public Game() {
         System.out.println("My first game!");
@@ -109,6 +115,10 @@ public class Game {
         updates = 0;
         frames = 0;
         elapsedSeconds = 0;
+
+        eventBus.addObserver(BulletCreated.class, (_, e) -> { bullets.add(e.id()); System.out.println("Bullets: " + bullets.size());});
+        eventBus.addObserver(EntityDeletedEvent.class, (_, e) -> { bullets.remove(e.entityId()); System.out.println("Bullets: " + bullets.size());});
+
     }
 
     public void run() {

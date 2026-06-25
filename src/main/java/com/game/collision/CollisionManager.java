@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class CollisionManager {
+    private final static int MAX_COLLISIONS_PER_FRAME = 500;
     private final Map<EntityId, ColliderState> colliders;
 
     public CollisionManager(EventBus bus) {
@@ -47,7 +48,9 @@ public class CollisionManager {
         float time = 0;
 
         Optional<Collision> optCollision = nextCollision(time);
-        while (optCollision.isPresent() && FloatUtils.lt(time, 1)) {
+        int totalCollisions = 0;
+        while (optCollision.isPresent() && FloatUtils.lt(time, 1) && totalCollisions < MAX_COLLISIONS_PER_FRAME) {
+            totalCollisions++;
             Collision collision = optCollision.get();
 
             EntityId e1 = collision.e1;

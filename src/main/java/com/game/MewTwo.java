@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.collision.Collider;
 import com.game.collision.CollisionManager;
+import com.game.collision.CollisionType;
 import com.game.entity.Entity;
 import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
@@ -48,6 +49,7 @@ public class MewTwo implements Entity {
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f)
                         )*/,
+                        CollisionType.INELASTIC,
                         true
                 )
         );
@@ -61,7 +63,7 @@ public class MewTwo implements Entity {
     private void onUpdate(EventBus bus, UpdateEvent event) {
         frames++;
 
-        if (frames == 180) {
+        if (frames == 60) {
             new Bullet(
                     new Transform2D(
                             transform.translateBy(new Translation2D(-1, 0)).translation(),

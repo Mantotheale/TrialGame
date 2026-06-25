@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.collision.Collider;
 import com.game.collision.CollisionManager;
+import com.game.collision.CollisionType;
 import com.game.entity.Entity;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
@@ -61,6 +62,7 @@ public class TileMap implements Iterable<RenderComponent> {
                                                 transform.translation().toVec2f(),
                                                 transform.scale().toVec2f()
                                         ),
+                                        CollisionType.INELASTIC,
                                         true
                                 )
                         );

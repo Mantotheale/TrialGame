@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.collision.Collider;
 import com.game.collision.CollisionManager;
+import com.game.collision.CollisionType;
 import com.game.collision.PhysicsState;
 import com.game.entity.Entity;
 import com.game.entity.EntityId;
@@ -59,6 +60,7 @@ public class Reshiram implements Entity {
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f)
                         ),
+                        CollisionType.INELASTIC,
                         false
                 )
         );

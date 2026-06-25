@@ -4,13 +4,13 @@ import com.game.math.*;
 
 import java.util.Optional;
 
-public record Collider(Shape shape, boolean isFixed) {
+public record Collider(Shape shape, CollisionType type, boolean isFixed) {
     public Vec2f center() {
         return shape.center();
     }
 
     public Collider moveTo(Vec2f position) {
-        return new Collider(shape.moveTo(position), isFixed);
+        return new Collider(shape.moveTo(position), type, isFixed);
     }
 
     public Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Collider other, Vec2f otherVelocity) {
@@ -18,7 +18,7 @@ public record Collider(Shape shape, boolean isFixed) {
     }
 
     public Vec2f resolveCollision(Vec2f velocity, Vec2f normal) {
-        return velocity.reject(normal);
+        return type.resolveVelocity(velocity, normal);
     }
 
     float squaredDistance(Collider other) {

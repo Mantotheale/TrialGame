@@ -2,6 +2,7 @@ package com.game;
 
 import com.game.collision.Collider;
 import com.game.collision.CollisionManager;
+import com.game.collision.CollisionType;
 import com.game.collision.PhysicsState;
 import com.game.entity.Entity;
 import com.game.entity.EntityId;
@@ -42,7 +43,7 @@ public class Bullet implements Entity {
         this.texture = resourceManager.getTexture(Tile.BULLET);
         elapsedUpdates = 0;
         id = entityManager.registerEntity(this);
-        velocity = Vec2f.LEFT.mul(2f * (float) UPDATE_TIME);
+        velocity = Vec2f.LEFT.mul(10f * (float) UPDATE_TIME);
 
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
@@ -55,11 +56,13 @@ public class Bullet implements Entity {
                                 transform.translation().toVec2f(),
                                 transform.scale().toVec2f().mul(0.8f).x() / 2
                         ),
+                        CollisionType.ELASTIC,
                         false
                 )
         );
 
         bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
+        bus.postEvent(new BulletCreated(id));
     }
 
     @Override
@@ -73,7 +76,7 @@ public class Bullet implements Entity {
 
     private void onUpdate(EventBus bus, UpdateEvent event) {
         elapsedUpdates++;
-        if (elapsedUpdates == 5 * UPDATES_PER_SECOND)
+        if (elapsedUpdates == 100 * UPDATES_PER_SECOND)
             delete(bus);
     }
 

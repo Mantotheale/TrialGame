@@ -52,6 +52,10 @@ public record Vec2f(float x, float y) {
         return this.sub(normal.mul(this.dot(normal)));
     }
 
+    public Vec2f reflect(Vec2f normal) {
+        return this.sub(normal.mul(2 * this.dot(normal)));
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
