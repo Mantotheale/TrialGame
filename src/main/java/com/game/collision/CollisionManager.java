@@ -88,6 +88,11 @@ public class CollisionManager {
                 .filter(e1 -> !e1.getValue().collider.isFixed())
                 .flatMap(e1 -> colliders.entrySet().stream()
                         .filter(e2 -> !e1.getKey().equals(e2.getKey()))
+                        .filter(e2 -> {
+                            ColliderState cs1 = e1.getValue();
+                            ColliderState cs2 = e2.getValue();
+                            return cs1.collider.broadPhaseCollides(cs1.velocity, cs2.collider, cs2.velocity);
+                        })
                         .flatMap(e2 -> {
                             EntityId id1 = e1.getKey();
                             ColliderState cs1 = e1.getValue();

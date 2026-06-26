@@ -8,4 +8,5 @@ public sealed interface Shape permits Circle, Rectangle {
     boolean contains(Vec2f position);
     boolean staticIntersects(Shape other);
     Optional<IntersectionData> dynamicIntersection(Vec2f velocity, Shape other, Vec2f otherVelocity);
+    float boundingRadius();
 }

@@ -104,4 +104,9 @@ public record Circle(Vec2f center, float radius) implements Shape {
             }
         };
     }
+
+    @Override
+    public float boundingRadius() {
+        return radius;
+    }
 }
