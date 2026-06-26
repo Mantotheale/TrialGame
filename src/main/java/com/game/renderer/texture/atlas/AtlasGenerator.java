@@ -2,8 +2,9 @@ package com.game.renderer.texture.atlas;
 
 import com.game.renderer.texture.Tile;
 import com.game.util.HashingUtils;
-import com.game.util.IOUtils;
+import com.game.util.FileUtils;
 import com.game.math.Vec2i;
+import com.game.util.ImageUtils;
 
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
@@ -24,24 +25,24 @@ public final class AtlasGenerator {
         this.atlasSize = atlasSize;
     }
 
-    public void generateAtlases(List<Tile> tiles) {
+    public void generateAtlases(List<Tile> tiles, int tilePadding) {
         if (tiles.isEmpty()) throw new IllegalArgumentException("Can't build an atlas with no tiles");
         if (!Files.isDirectory(atlasDirectory))
-            IOUtils.createDirectory(atlasDirectory);
+            FileUtils.createDirectory(atlasDirectory);
 
-        IOUtils.deletePathContent(atlasDirectory);
+        FileUtils.deletePathContent(atlasDirectory);
 
-        List<TileWithImage> tilesWithImages = openImages(tiles);
-        List<List<TileMetadata>> atlasesMetadata = createAtlases(tilesWithImages);
-        saveMetadata(atlasesMetadata);
+        List<TileWithImage> tilesWithImages = openImages(tiles, tilePadding);
+        List<List<TileMetadata>> atlasesMetadata = createAtlases(tilesWithImages, tilePadding);
+        saveMetadata(atlasesMetadata, tilePadding);
         saveChecksum();
     }
 
-    private List<TileWithImage> openImages(List<Tile> tiles) {
+    private List<TileWithImage> openImages(List<Tile> tiles, int tilePadding) {
         List<TileWithImage> pairs = new ArrayList<>();
 
         for (Tile tile : tiles) {
-            BufferedImage image = IOUtils.loadImage(tile.path());
+            BufferedImage image = ImageUtils.padImage(ImageUtils.loadImage(tile.path()), tilePadding);
 
             if (image.getWidth() > atlasSize || image.getHeight() > atlasSize)
                 throw new IllegalArgumentException(
@@ -54,16 +55,16 @@ public final class AtlasGenerator {
         return pairs;
     }
 
-    private List<List<TileMetadata>> createAtlases(List<TileWithImage> tilesWithImages) {
+    private List<List<TileMetadata>> createAtlases(List<TileWithImage> tilesWithImages, int tilePadding) {
         tilesWithImages.sort(TileWithImage::compareTo);
 
         List<List<TileMetadata>> tilesMetadata = new ArrayList<>();
 
         while (!tilesWithImages.isEmpty()) {
-            ImageAndMetadata atlasAndMetadata = packImages(tilesWithImages);
+            ImageAndMetadata atlasAndMetadata = packImages(tilesWithImages, tilePadding);
 
             Path imagePath = atlasDirectory.resolve("atlas_" + (tilesMetadata.size() + 1) + ".png");
-            IOUtils.saveImage(imagePath, atlasAndMetadata.image());
+            ImageUtils.saveImage(atlasAndMetadata.image(), imagePath);
 
             tilesMetadata.add(atlasAndMetadata.tileMetadata());
         }
@@ -71,7 +72,7 @@ public final class AtlasGenerator {
         return tilesMetadata;
     }
 
-    private ImageAndMetadata packImages(List<TileWithImage> tilesWithImages) {
+    private ImageAndMetadata packImages(List<TileWithImage> tilesWithImages, int tilePadding) {
         BufferedImage atlas = new BufferedImage(atlasSize, atlasSize, BufferedImage.TYPE_INT_ARGB);
         List<TileMetadata> metadata = new ArrayList<>();
 
@@ -97,7 +98,13 @@ public final class AtlasGenerator {
                 }
             }
             Tile tile = tilesWithImages.removeFirst().tile;
-            metadata.add(new TileMetadata(tile, pointer.x(), atlasSize - pointer.y(), width, height));
+            metadata.add(new TileMetadata(
+                    tile,
+                    pointer.x() + tilePadding,
+                    atlasSize - pointer.y() + tilePadding,
+                    width - 2 * tilePadding,
+                    height - 2 * tilePadding
+            ));
 
             pointer = new Vec2i(pointer.x() + width, pointer.y());
             rowHeight = Math.max(rowHeight, height);
@@ -106,9 +113,10 @@ public final class AtlasGenerator {
         return new ImageAndMetadata(atlas, metadata);
     }
 
-    private void saveMetadata(List<List<TileMetadata>> atlasesMetadata) {
+    private void saveMetadata(List<List<TileMetadata>> atlasesMetadata, int tilePadding) {
         StringBuilder sb = new StringBuilder();
 
+        sb.append("padding ").append(tilePadding).append('\n');
         for (int i = 0; i != atlasesMetadata.size(); i++) {
             List<TileMetadata> tilesMetadata = atlasesMetadata.get(i);
 
@@ -123,16 +131,16 @@ public final class AtlasGenerator {
             }
         }
 
-        IOUtils.saveStringToFile(atlasDirectory.resolve(ATLASES_METADATA_FILE), sb.toString());
+        FileUtils.saveStringToFile(atlasDirectory.resolve(ATLASES_METADATA_FILE), sb.toString());
     }
 
     private void saveChecksum() {
-        Stream<byte[]> filesBytes = IOUtils.filesInDirectory(atlasDirectory).stream()
+        Stream<byte[]> filesBytes = FileUtils.filesInDirectory(atlasDirectory).stream()
                 .sorted()
-                .map(IOUtils::readAllBites);
+                .map(FileUtils::readAllBites);
         String hash = HashingUtils.hash(filesBytes);
 
-        IOUtils.saveStringToFile(atlasDirectory.resolve(ATLASES_CHECKSUM_FILE), hash);
+        FileUtils.saveStringToFile(atlasDirectory.resolve(ATLASES_CHECKSUM_FILE), hash);
     }
 
     private record TileWithImage(Tile tile, BufferedImage image) implements Comparable<TileWithImage> {

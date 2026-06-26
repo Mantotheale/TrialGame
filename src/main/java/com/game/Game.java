@@ -69,7 +69,7 @@ public class Game {
 
         inputManager = new InputManager(window, eventBus);
 
-        resourceManager = new ResourceManager(Path.of("src/main/resources/atlases"));
+        resourceManager = new ResourceManager(Path.of("src/main/resources/atlases"), 0);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

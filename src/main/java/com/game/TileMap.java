@@ -12,7 +12,7 @@ import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
 import com.game.transform.Transform2D;
 import com.game.transform.Translation2D;
-import com.game.util.IOUtils;
+import com.game.util.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -31,7 +31,7 @@ public class TileMap implements Iterable<RenderComponent> {
     }
 
     public static TileMap fromFile(Path path, ResourceManager resourceManager, EventBus eventBus, EntityManager entityManager, CollisionManager collisionManager) {
-        List<RenderComponent> tiles = IOUtils.readAllLines(path).stream()
+        List<RenderComponent> tiles = FileUtils.readAllLines(path).stream()
                 .filter(l -> !l.isBlank())
                 .map(l -> l.split(" "))
                 .map(fields -> {

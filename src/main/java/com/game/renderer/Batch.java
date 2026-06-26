@@ -76,8 +76,9 @@ class Batch {
         MemoryUtil.memFree(intermediateBuffer);
     }
 
-    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f, -0.5f);
-    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f, -0.5f);
-    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f, 0.5f);
-    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f, 0.5f);
+    private final static float MICRO_OVERLAP = 0.005f; // TO AVOID QUAD BLEEDING
+    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f - MICRO_OVERLAP, -0.5f - MICRO_OVERLAP);
+    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f + MICRO_OVERLAP, -0.5f - MICRO_OVERLAP);
+    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f + MICRO_OVERLAP, 0.5f + MICRO_OVERLAP);
+    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f - MICRO_OVERLAP, 0.5f + MICRO_OVERLAP);
 }

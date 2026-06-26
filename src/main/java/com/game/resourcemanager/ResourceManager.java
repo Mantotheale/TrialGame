@@ -12,23 +12,23 @@ public class ResourceManager {
     public static final int MAX_ATLAS_SIZE = 1024;
     private static final TextureAttributes texAttr = new TextureAttributes.Builder()
             .magnifyingFilter(TextureMagnifyingFilter.NEAREST)
-            .minifyingFilter(TextureMinifyingFilter.NEAREST_MIPMAP_NEAREST)
-            .mipmap(true)
+            .minifyingFilter(TextureMinifyingFilter.NEAREST)
+            .mipmap(false)
             .build();
 
     private final TextureAtlas[] atlases;
     private final Map<Tile, Integer> tileAtlasMap;
 
-    public ResourceManager(Path atlasesPath) {
+    public ResourceManager(Path atlasesPath, int tilesPadding) {
         List<Tile> requestedTiles = List.of(Tile.values());
 
         AtlasLoader atlasLoader = new AtlasLoader(atlasesPath);
         List<PathAndMetadata> atlasesMetadata = atlasLoader
-                .loadAtlases(requestedTiles)
+                .loadAtlases(requestedTiles, tilesPadding)
                 .orElseGet(() -> {
                     AtlasGenerator atlasGenerator = new AtlasGenerator(atlasesPath, MAX_ATLAS_SIZE);
-                    atlasGenerator.generateAtlases(requestedTiles);
-                    return atlasLoader.loadAtlases(requestedTiles).orElseThrow();
+                    atlasGenerator.generateAtlases(requestedTiles, tilesPadding);
+                    return atlasLoader.loadAtlases(requestedTiles, tilesPadding).orElseThrow();
                 });
 
         atlases = new TextureAtlas[atlasesMetadata.size()];

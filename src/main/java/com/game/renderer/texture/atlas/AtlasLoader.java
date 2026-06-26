@@ -2,7 +2,7 @@ package com.game.renderer.texture.atlas;
 
 import com.game.renderer.texture.Tile;
 import com.game.util.HashingUtils;
-import com.game.util.IOUtils;
+import com.game.util.FileUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,10 +21,13 @@ public class AtlasLoader {
         this.metadataPath = atlasDirectory.resolve(AtlasGenerator.ATLASES_METADATA_FILE);
     }
 
-    public Optional<List<PathAndMetadata>> loadAtlases(List<Tile> tiles) {
+    public Optional<List<PathAndMetadata>> loadAtlases(List<Tile> tiles, int tilePadding) {
         if (!isIntegrityPreserved()) return Optional.empty();
 
-        List<List<TileMetadata>> metadata = loadMetadata();
+        MetadataAndPadding metadataAndPadding = loadMetadata();
+        if (metadataAndPadding.padding != tilePadding) return Optional.empty();
+
+        List<List<TileMetadata>> metadata = metadataAndPadding.metadata;
         if (!metadataMatchesRequestedTiles(metadata, tiles)) return Optional.empty();
 
         List<PathAndMetadata> pathAndMetadata = new ArrayList<>();
@@ -39,28 +42,33 @@ public class AtlasLoader {
     public boolean isIntegrityPreserved() {
         if (!Files.exists(checksumPath)) return false;
 
-        String storedChecksum = IOUtils.readToString(checksumPath);
+        String storedChecksum = FileUtils.readToString(checksumPath);
         String computedChecksum = computeChecksum();
 
         return storedChecksum.equals(computedChecksum);
     }
 
     private String computeChecksum() {
-        Stream<byte[]> filesBytes = IOUtils.filesInDirectory(atlasDirectory).stream()
+        Stream<byte[]> filesBytes = FileUtils.filesInDirectory(atlasDirectory).stream()
                 .filter(p -> !p.equals(checksumPath))
                 .sorted()
-                .map(IOUtils::readAllBites);
+                .map(FileUtils::readAllBites);
         return HashingUtils.hash(filesBytes);
     }
 
-    private List<List<TileMetadata>> loadMetadata() {
-        List<List<TileMetadata>> metadata = new ArrayList<>();
+    private MetadataAndPadding loadMetadata() {
+        List<String> lines = FileUtils.readAllLines(metadataPath);
 
+        if (!lines.getFirst().startsWith("padding"))
+            throw new RuntimeException("Padding metadata not found");
+        int padding = Integer.parseInt(lines.removeFirst().substring(8));
+
+        List<List<TileMetadata>> metadata = new ArrayList<>();
         boolean foundAtlas = false;
-        for (String line : IOUtils.readAllLines(metadataPath)) {
+        for (String line : lines) {
             if (line.isBlank()) continue;
 
-            if (line.startsWith("atlas ")) {
+            if (line.startsWith("atlas")) {
                 foundAtlas = true;
                 metadata.add(new ArrayList<>());
             } else {
@@ -78,7 +86,7 @@ public class AtlasLoader {
             }
         }
 
-        return metadata;
+        return new MetadataAndPadding(metadata, padding);
     }
 
     private boolean metadataMatchesRequestedTiles(List<List<TileMetadata>> metadata, List<Tile> tiles) {
@@ -91,4 +99,6 @@ public class AtlasLoader {
 
         return storedTiles.equals(requestedTiles);
     }
+
+    private record MetadataAndPadding(List<List<TileMetadata>> metadata, int padding) { }
 }
