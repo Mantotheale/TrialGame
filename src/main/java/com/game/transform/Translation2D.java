@@ -19,6 +19,10 @@ public record Translation2D(float x, float y) {
         return new Translation2D(this.x + x, this.y + y);
     }
 
+    public Translation2D compose(Vec2f v) {
+        return new Translation2D(this.x + v.x(), this.y + v.y());
+    }
+
     public static Translation2D fromVec2f(Vec2f v) {
         return new Translation2D(v.x(), v.y());
     }

@@ -12,18 +12,23 @@ import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
 import com.game.math.Circle;
+import com.game.math.Vec2f;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
 import com.game.transform.Scale2D;
 import com.game.transform.Transform2D;
-import com.game.transform.Translation2D;
+
+import java.util.function.Supplier;
+
+import static com.game.Game.UPDATE_TIME;
 
 public class MewTwo implements Entity {
     private final EntityId id;
     private final Transform2D transform;
     private final Texture texture;
     private int frames;
+    private Supplier<Vec2f> targetPositionSupplier;
 
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
@@ -53,6 +58,8 @@ public class MewTwo implements Entity {
                         true
                 )
         );
+
+        targetPositionSupplier = null;
     }
 
     @Override
@@ -60,16 +67,28 @@ public class MewTwo implements Entity {
         return id;
     }
 
+    public void setTargetPosition(Supplier<Vec2f> supplier) {
+        targetPositionSupplier = supplier;
+    }
+
     private void onUpdate(EventBus bus, UpdateEvent event) {
         frames++;
 
         if (frames == 60) {
+            Vec2f position = transform.translation().toVec2f();
+            Vec2f target = targetPositionSupplier != null
+                    ? targetPositionSupplier.get()
+                    : position.add(Vec2f.LEFT);
+            Vec2f direction = target.sub(position).normalize();
+            float baseSpeed = 7.5f * (float) UPDATE_TIME;
+
             new Bullet(
                     new Transform2D(
-                            transform.translateBy(new Translation2D(-1, 0)).translation(),
+                            transform.translation().compose(direction),
                             Scale2D.UNIT,
                             3
                     ),
+                    direction.mul(baseSpeed),
                     event.resourceManager(),
                     event.entityManager(),
                     bus,

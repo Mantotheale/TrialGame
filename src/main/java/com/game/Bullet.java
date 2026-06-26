@@ -24,7 +24,6 @@ import com.game.transform.Transform2D;
 import com.game.transform.Translation2D;
 
 import static com.game.Game.UPDATES_PER_SECOND;
-import static com.game.Game.UPDATE_TIME;
 
 public class Bullet implements Entity {
     private final EntityId id;
@@ -38,12 +37,12 @@ public class Bullet implements Entity {
     private final EventObserver<PhysicsUpdatedEvent> onPhysicsUpdateFunc = this::onPhysicsUpdate;
 
 
-    public Bullet(Transform2D transform, ResourceManager resourceManager, EntityManager entityManager, EventBus bus, CollisionManager collisionManager) {
+    public Bullet(Transform2D transform, Vec2f startingVelocity, ResourceManager resourceManager, EntityManager entityManager, EventBus bus, CollisionManager collisionManager) {
         this.transform = transform;
         this.texture = resourceManager.getTexture(Tile.BULLET);
         elapsedUpdates = 0;
         id = entityManager.registerEntity(this);
-        velocity = Vec2f.LEFT.mul(7.5f * (float) UPDATE_TIME);
+        velocity = startingVelocity;
 
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
         bus.addObserver(UpdateEvent.class, onUpdateFunc);

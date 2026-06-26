@@ -9,6 +9,7 @@ import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
+import com.game.event.deferred.CollisionEvent;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.EntityVelocityChangedEvent;
@@ -33,6 +34,7 @@ public class Reshiram implements Entity {
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
     private final EventObserver<PhysicsUpdatedEvent> onPhysicsUpdated = this::onPhysicsUpdated;
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
+    private final EventObserver<CollisionEvent> onCollisionFunc = this::onCollision;
 
     @Override
     public EntityId id() {
@@ -47,6 +49,7 @@ public class Reshiram implements Entity {
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
         bus.addObserver(PhysicsUpdatedEvent.class, onPhysicsUpdated);
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
+        bus.addObserver(CollisionEvent.class, onCollisionFunc);
 
         this.id = entityManager.registerEntity(this);
         collisionManager.addCollider(
@@ -81,7 +84,7 @@ public class Reshiram implements Entity {
             direction = direction.add(Vec2f.RIGHT);
 
         if (!direction.equals(Vec2f.ZERO)) {
-            float movementSpeed = 25 * (float) Game.UPDATE_TIME;
+            float movementSpeed = 15 * (float) Game.UPDATE_TIME;
             velocity = direction.normalize().mul(movementSpeed);
         }
 
@@ -101,11 +104,17 @@ public class Reshiram implements Entity {
         event.renderer().submit(transform, texture);
     }
 
+    private void onCollision(EventBus bus, CollisionEvent event) {
+        if (event.e1().equals(id) || event.e2().equals(id))
+            System.out.println("HIT");
+    }
+
     @Override
     public void delete(EventBus bus) {
         bus.removeObserver(UpdateEvent.class, onUpdateFunc);
         bus.removeObserver(PhysicsUpdatedEvent.class, onPhysicsUpdated);
         bus.removeObserver(RenderRequestEvent.class, onRenderFunc);
+        bus.removeObserver(CollisionEvent.class, onCollisionFunc);
 
         bus.postEvent(new EntityDeletedEvent(id));
     }
