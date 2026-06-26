@@ -24,7 +24,12 @@ public class AtlasLoader {
     public Optional<List<PathAndMetadata>> loadAtlases(List<Tile> tiles, int tilePadding) {
         if (!isIntegrityPreserved()) return Optional.empty();
 
-        MetadataAndPadding metadataAndPadding = loadMetadata();
+        MetadataAndPadding metadataAndPadding;
+        try {
+            metadataAndPadding = loadMetadata();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
         if (metadataAndPadding.padding != tilePadding) return Optional.empty();
 
         List<List<TileMetadata>> metadata = metadataAndPadding.metadata;

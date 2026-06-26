@@ -1,6 +1,6 @@
 Path mapsPath = Path.of("src/main/resources/maps");
         if (!Files.isDirectory(mapsPath))
-        IOUtils.createDirectory(mapsPath);
+        FileUtils.createDirectory(mapsPath);
 
         try (FileWriter fw = new FileWriter(mapsPath.resolve("simple_map.txt").toFile())){
         for (int i = -7; i <= 7; i++) {
