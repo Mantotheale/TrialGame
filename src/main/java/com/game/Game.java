@@ -82,7 +82,7 @@ public class Game {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         camera = new Camera(
-                new CameraProjection.Orthographic(-7, 7, -7, 7, 0.01f, 20),
+                new CameraProjection.Orthographic(-8.5f, 8.5f, -8.5f, 8.5f, 0.01f, 20),
                 new Transform3D(new Translation3D(0, 0, 20), Rotation3D.fromDirection(Rotation3D.WORLD_FRONT), new Scale3D()),
                 eventBus
         );

@@ -23,6 +23,13 @@ public record Collider(Shape shape, CollisionType type, boolean isFixed) {
 
     float squaredDistance(Collider other) {
         return this.center().squaredDistance(other.center());
+    }
 
+    boolean broadPhaseCollides(Vec2f velocity, Collider other, Vec2f otherVelocity) {
+        float broadRadius = shape.boundingRadius() + velocity.len();
+        float otherBroadRadius = other.shape.boundingRadius() + otherVelocity.len();
+        float radiiSum = broadRadius + otherBroadRadius;
+
+        return FloatUtils.leq(squaredDistance(other), radiiSum * radiiSum);
     }
 }

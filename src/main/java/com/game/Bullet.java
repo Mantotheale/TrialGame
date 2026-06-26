@@ -43,7 +43,7 @@ public class Bullet implements Entity {
         this.texture = resourceManager.getTexture(Tile.BULLET);
         elapsedUpdates = 0;
         id = entityManager.registerEntity(this);
-        velocity = Vec2f.LEFT.mul(10f * (float) UPDATE_TIME);
+        velocity = Vec2f.LEFT.mul(7.5f * (float) UPDATE_TIME);
 
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
@@ -76,7 +76,7 @@ public class Bullet implements Entity {
 
     private void onUpdate(EventBus bus, UpdateEvent event) {
         elapsedUpdates++;
-        if (elapsedUpdates == 100 * UPDATES_PER_SECOND)
+        if (elapsedUpdates == 50 * UPDATES_PER_SECOND)
             delete(bus);
     }
 

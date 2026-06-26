@@ -100,6 +100,14 @@ public record Rectangle(Vec2f center, float width, float height) implements Shap
     }
 
     @Override
+    public float boundingRadius() {
+        float halfWidth = 0.5f * width;
+        float halfHeight = 0.5f * height;
+
+        return (float) Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
 
