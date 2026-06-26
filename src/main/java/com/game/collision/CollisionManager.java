@@ -1,6 +1,7 @@
 package com.game.collision;
 
 import com.game.entity.EntityId;
+import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
 import com.game.event.deferred.CollisionEvent;
 import com.game.event.deferred.EntityDeletedEvent;
@@ -44,7 +45,7 @@ public class CollisionManager {
         colliders.remove(id);
     }
 
-    public void simulate(EventBus bus) {
+    public void simulate(EventBus bus, EntityManager entityManager) {
         float time = 0;
 
         Optional<Collision> optCollision = nextCollision(time);
@@ -72,7 +73,7 @@ public class CollisionManager {
             colliders.computeIfPresent(e1, (_, s) -> s.velocityChanged(resolvedVelocity1));
             if (!collider2.isFixed())
                 colliders.computeIfPresent(e2, (_, s) -> s.velocityChanged(resolvedVelocity2));
-            bus.postEvent(new CollisionEvent(e1, e2));
+            bus.postEvent(new CollisionEvent(e1, e2, entityManager));
 
             time += dt;
             optCollision = nextCollision(time);

@@ -105,8 +105,11 @@ public class Reshiram implements Entity {
     }
 
     private void onCollision(EventBus bus, CollisionEvent event) {
-        if (event.e1().equals(id) || event.e2().equals(id))
-            System.out.println("HIT");
+        if (event.e1().equals(id) || event.e2().equals(id)) {
+            EntityId otherId = event.e1().equals(id) ? event.e2() : event.e1();
+            Entity other = event.entityManager().getById(otherId);
+            if (other instanceof Bullet) System.out.println("HIT");
+        }
     }
 
     @Override

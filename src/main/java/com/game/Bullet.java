@@ -9,6 +9,7 @@ import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
+import com.game.event.deferred.CollisionEvent;
 import com.game.event.deferred.EntityDeletedEvent;
 import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.EntityVelocityChangedEvent;
@@ -35,7 +36,7 @@ public class Bullet implements Entity {
     private final EventObserver<RenderRequestEvent> onRenderFunc = this::onRender;
     private final EventObserver<UpdateEvent> onUpdateFunc = this::onUpdate;
     private final EventObserver<PhysicsUpdatedEvent> onPhysicsUpdateFunc = this::onPhysicsUpdate;
-
+    private final EventObserver<CollisionEvent> onCollisionFunc = this::onCollision;
 
     public Bullet(Transform2D transform, Vec2f startingVelocity, ResourceManager resourceManager, EntityManager entityManager, EventBus bus, CollisionManager collisionManager) {
         this.transform = transform;
@@ -47,6 +48,7 @@ public class Bullet implements Entity {
         bus.addObserver(RenderRequestEvent.class, onRenderFunc);
         bus.addObserver(UpdateEvent.class, onUpdateFunc);
         bus.addObserver(PhysicsUpdatedEvent.class, onPhysicsUpdateFunc);
+        bus.addObserver(CollisionEvent.class, onCollisionFunc);
 
         collisionManager.addCollider(
                 id,
@@ -88,11 +90,21 @@ public class Bullet implements Entity {
         bus.postEvent(new EntityVelocityChangedEvent(id, velocity));
     }
 
+    private void onCollision(EventBus bus, CollisionEvent event) {
+        if (id.equals(event.e1()) || id.equals(event.e2())) {
+            EntityId otherId = id.equals(event.e1()) ? event.e2() : event.e1();
+            Entity other = event.entityManager().getById(otherId);
+            if (other instanceof Reshiram) delete(bus);
+        }
+    }
+
     @Override
     public void delete(EventBus bus) {
         bus.removeObserver(RenderRequestEvent.class, onRenderFunc);
         bus.removeObserver(UpdateEvent.class, onUpdateFunc);
         bus.removeObserver(PhysicsUpdatedEvent.class, onPhysicsUpdateFunc);
+        bus.removeObserver(CollisionEvent.class, onCollisionFunc);
+
         bus.postEvent(new EntityDeletedEvent(id));
     }
 }

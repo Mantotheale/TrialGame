@@ -146,7 +146,7 @@ public class Game {
         eventBus.postEvent(new UpdateEvent(inputManager, resourceManager, entityManager, collisionManager));
         eventBus.dispatchDeferredEvents();
 
-        collisionManager.simulate(eventBus);
+        collisionManager.simulate(eventBus, entityManager);
         eventBus.postEvent(new PhysicsUpdatedEvent(collisionManager));
         eventBus.dispatchDeferredEvents();
 
