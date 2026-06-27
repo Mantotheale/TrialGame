@@ -2,6 +2,7 @@ package com.game.input;
 
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
+import com.game.event.deferred.FrameBufferResizedEvent;
 import com.game.input.rawcomponents.KeyState;
 import com.game.input.rawcomponents.PhysicalAction;
 import com.game.input.rawcomponents.PhysicalKey;
@@ -38,6 +39,7 @@ public class InputManager implements InputObserver {
             case CloseWindow() -> eventBus.postEvent(new CloseGameRequestedEvent());
             case KeyInput(PhysicalKey key, _) when key == PhysicalKey.ESCAPE ->
                     eventBus.postEvent(new CloseGameRequestedEvent());
+            case ResizeFrameBuffer(int width, int height) -> eventBus.postEvent(new FrameBufferResizedEvent(width, height));
             default -> {}
         }
     }

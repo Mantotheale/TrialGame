@@ -70,7 +70,7 @@ public class Game {
                 .build();
         window.setVsync(false);
 
-        renderer = new Renderer();
+        renderer = new Renderer(eventBus);
         renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
 
         inputManager = new InputManager(window, eventBus);
@@ -203,7 +203,7 @@ public class Game {
         reshiram.delete(eventBus);
         mewtwo.delete(eventBus);
         resourceManager.delete();
-        renderer.delete();
+        renderer.delete(eventBus);
         window.delete();
         soundManager.delete();
         soundDevice.delete();

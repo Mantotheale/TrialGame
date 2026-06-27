@@ -1,7 +1,6 @@
 package com.game.renderer;
 
 import com.game.camera.Camera;
-import com.game.event.DeferredEvent;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
 import com.game.event.deferred.FrameBufferResizedEvent;
@@ -16,7 +15,7 @@ import java.util.PriorityQueue;
 
 import static org.lwjgl.opengl.GL20.*;
 
-public class Renderer implements EventObserver<DeferredEvent> {
+public class Renderer {
     private static final int MAX_QUAD_COUNT = 10000;
     private static final int TEXTURE_UNITS = 8;
 
@@ -25,7 +24,9 @@ public class Renderer implements EventObserver<DeferredEvent> {
     private final ShaderProgram shaderProgram;
     private Camera camera;
 
-    public Renderer() {
+    private final EventObserver<FrameBufferResizedEvent> onFrameBufferResizedFunc = this::onFrameBufferResized;
+
+    public Renderer(EventBus bus) {
         VertexLayout vertexLayout = new VertexLayout.Builder()
                 .pushFloats(2)
                 .pushInts(1)
@@ -44,6 +45,8 @@ public class Renderer implements EventObserver<DeferredEvent> {
             shaderProgram.setInt("tex[" + i + "]", i);
 
         commandQueue = new PriorityQueue<>();
+
+        bus.addObserver(FrameBufferResizedEvent.class, onFrameBufferResizedFunc);
     }
 
     public void beginScene(Camera camera) {
@@ -72,23 +75,18 @@ public class Renderer implements EventObserver<DeferredEvent> {
         camera = null;
     }
 
-    public void delete() {
+    public void delete(EventBus bus) {
         batch.delete();
         shaderProgram.delete();
         commandQueue.clear();
-    }
-
-    public void setViewport(int originX, int originY, int width, int height) {
-        glViewport(originX, originY, width, height);
+        bus.removeObserver(FrameBufferResizedEvent.class, onFrameBufferResizedFunc);
     }
 
     public void setClearColor(float r, float g, float b, float a) {
         glClearColor(r, g, b, a);
     }
 
-    @Override
-    public void onEvent(EventBus bus, DeferredEvent event) {
-        if (event instanceof FrameBufferResizedEvent(int newWidth, int newHeight))
-            setViewport(0, 0, newWidth, newHeight);
+    private void onFrameBufferResized(EventBus bus, FrameBufferResizedEvent event) {
+        glViewport(0, 0, event.newWidth(), event.newHeight());
     }
 }
