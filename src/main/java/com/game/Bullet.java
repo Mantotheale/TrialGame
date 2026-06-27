@@ -9,10 +9,7 @@ import com.game.entity.EntityId;
 import com.game.entity.EntityManager;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
-import com.game.event.deferred.CollisionEvent;
-import com.game.event.deferred.EntityDeletedEvent;
-import com.game.event.deferred.EntityMovedEvent;
-import com.game.event.deferred.EntityVelocityChangedEvent;
+import com.game.event.deferred.*;
 import com.game.event.instant.PhysicsUpdatedEvent;
 import com.game.event.instant.RenderRequestEvent;
 import com.game.event.instant.UpdateEvent;
@@ -21,6 +18,7 @@ import com.game.math.Vec2f;
 import com.game.renderer.texture.Texture;
 import com.game.renderer.texture.Tile;
 import com.game.resourcemanager.ResourceManager;
+import com.game.sound.Sound;
 import com.game.transform.Transform2D;
 import com.game.transform.Translation2D;
 
@@ -94,7 +92,10 @@ public class Bullet implements Entity {
         if (id.equals(event.e1()) || id.equals(event.e2())) {
             EntityId otherId = id.equals(event.e1()) ? event.e2() : event.e1();
             Entity other = event.entityManager().getById(otherId);
-            if (other instanceof Reshiram) delete(bus);
+            if (other instanceof Reshiram) {
+                bus.postEvent(PlaySoundRequestEvent.generateEvent(Sound.HIT, false, 0.7f));
+                delete(bus);
+            }
         }
     }
 

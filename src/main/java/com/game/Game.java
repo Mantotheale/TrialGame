@@ -8,10 +8,14 @@ import com.game.entity.EntityManager;
 import com.game.event.*;
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
+import com.game.event.deferred.PlaySoundRequestEvent;
 import com.game.event.instant.*;
 import com.game.input.*;
 import com.game.renderer.Renderer;
 import com.game.resourcemanager.ResourceManager;
+import com.game.sound.Sound;
+import com.game.sound.SoundDevice;
+import com.game.sound.SoundManager;
 import com.game.transform.*;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
@@ -35,6 +39,8 @@ public class Game {
     private final EventBus eventBus;
     private final EntityManager entityManager;
     private final CollisionManager collisionManager;
+    private final SoundManager soundManager;
+    private final SoundDevice soundDevice;
 
     private final Entity reshiram;
     private final MewTwo mewtwo;
@@ -69,7 +75,10 @@ public class Game {
 
         inputManager = new InputManager(window, eventBus);
 
+        soundDevice = new SoundDevice();
         resourceManager = new ResourceManager(Path.of("src/main/resources/atlases"), 0);
+
+        soundManager = new SoundManager(eventBus, resourceManager);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -106,6 +115,7 @@ public class Game {
         );
         mewtwo.setTargetPosition(() -> collisionManager.state(reshiram.id()).position());
 
+        eventBus.postEvent(PlaySoundRequestEvent.generateEvent(Sound.NATIONAL_PARK, true, 0.3f));
         updates = 0;
         frames = 0;
     }
@@ -190,11 +200,13 @@ public class Game {
     }
 
     private void terminate() {
+        reshiram.delete(eventBus);
+        mewtwo.delete(eventBus);
         resourceManager.delete();
         renderer.delete();
         window.delete();
-        reshiram.delete(eventBus);
-        mewtwo.delete(eventBus);
+        soundManager.delete();
+        soundDevice.delete();
         eventBus.postEvent(new GameClosedEvent());
         eventBus.dispatchDeferredEvents();
     }

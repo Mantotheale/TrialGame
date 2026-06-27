@@ -2,9 +2,12 @@ package com.game.resourcemanager;
 
 import com.game.renderer.texture.*;
 import com.game.renderer.texture.atlas.*;
+import com.game.sound.Sound;
+import com.game.sound.SoundBuffer;
 
 import java.nio.file.Path;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +21,7 @@ public class ResourceManager {
 
     private final TextureAtlas[] atlases;
     private final Map<Tile, Integer> tileAtlasMap;
+    private final Map<Sound, SoundBuffer> sounds;
 
     public ResourceManager(Path atlasesPath, int tilesPadding) {
         List<Tile> requestedTiles = List.of(Tile.values());
@@ -43,10 +47,23 @@ public class ResourceManager {
             for (TileMetadata m: metadata)
                 tileAtlasMap.put(m.tile(), i);
         }
+
+        sounds = new HashMap<>();
+        for (Sound s: Sound.values())
+            sounds.put(s, new SoundBuffer(s.path()));
     }
 
     public Texture getTexture(Tile tile) {
         return atlases[tileAtlasMap.get(tile)].getFromTile(tile);
+    }
+
+    public SoundBuffer getSoundBuffer(Sound sound) {
+        SoundBuffer buffer = sounds.get(sound);
+
+        if (buffer == null)
+            throw new IllegalStateException("The requested sound is not in the resource manager. Requested " + sound);
+
+        return buffer;
     }
 
     public void delete() {
