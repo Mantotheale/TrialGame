@@ -19,6 +19,10 @@ import com.game.sound.SoundManager;
 import com.game.transform.*;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
+import imgui.ImGui;
+import imgui.ImGuiIO;
+import imgui.gl3.ImGuiImplGl3;
+import imgui.glfw.ImGuiImplGlfw;
 
 import java.nio.file.Path;
 
@@ -50,6 +54,9 @@ public class Game {
 
     private int updates;
     private int frames;
+
+    private final ImGuiImplGlfw imguiGlfw;
+    private final ImGuiImplGl3 imguiGl3;
 
     public Game() {
         System.out.println("My first game!");
@@ -118,6 +125,15 @@ public class Game {
         eventBus.postEvent(PlaySoundRequestEvent.generateEvent(Sound.NATIONAL_PARK, true, 0.3f));
         updates = 0;
         frames = 0;
+
+        ImGui.createContext();
+        ImGuiIO io = ImGui.getIO();
+        io.setIniFilename(null);
+
+        imguiGlfw = new ImGuiImplGlfw();
+        imguiGl3 = new ImGuiImplGl3();
+        imguiGlfw.init(window.id(), true);
+        imguiGl3.init("#version 330 core");
     }
 
     public void run() {
@@ -181,6 +197,17 @@ public class Game {
         eventBus.postEvent(new RenderRequestEvent(renderer));
         renderer.endScene();
 
+        imguiGlfw.newFrame();
+        imguiGl3.newFrame();
+        ImGui.newFrame();
+
+        ImGui.begin("Debug");
+        ImGui.text("Daje");
+        ImGui.end();
+
+        ImGui.render();
+        imguiGl3.renderDrawData(ImGui.getDrawData());
+
         window.swapBuffers();
     }
 
@@ -200,6 +227,9 @@ public class Game {
     }
 
     private void terminate() {
+        imguiGl3.shutdown();
+        imguiGlfw.shutdown();
+        ImGui.destroyContext();
         reshiram.delete(eventBus);
         mewtwo.delete(eventBus);
         resourceManager.delete();
