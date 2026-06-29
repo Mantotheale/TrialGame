@@ -81,7 +81,7 @@ public class Game {
         window.setVsync(false);
 
         renderer = new Renderer(eventBus);
-        renderer.setClearColor(0.957f, 0.9062f, 0.5859f, 1.0f);
+        renderer.setClearColor(0.075f, 0.075f, 0.1f, 1.0f);
 
         inputManager = new InputManager(window, eventBus);
 

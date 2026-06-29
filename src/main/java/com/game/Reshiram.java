@@ -64,7 +64,7 @@ public class Reshiram implements Entity {
                                 transform.scale().toVec2f().mul(0.8f)
                         ),
                         CollisionType.INELASTIC,
-                        false
+                        true
                 )
         );
     }

@@ -76,7 +76,6 @@ public class Renderer {
     }
 
     public void addGrid(Vec2f center) {
-        System.out.println("PORCODIO");
         this.gridCenter = center;
     }
 
@@ -132,9 +131,9 @@ public class Renderer {
         glViewport(0, 0, event.newWidth(), event.newHeight());
     }
 
-    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f, -0.5f);
-    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f, -0.5f);
-    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f, 0.5f);
-    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f, 0.5f);
+    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f, -0.5f).mul(20);
+    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f, -0.5f).mul(20);
+    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f, 0.5f).mul(20);
+    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f, 0.5f).mul(20);
 
 }
