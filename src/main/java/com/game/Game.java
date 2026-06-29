@@ -8,9 +8,11 @@ import com.game.entity.EntityManager;
 import com.game.event.*;
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
+import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.PlaySoundRequestEvent;
 import com.game.event.instant.*;
 import com.game.input.*;
+import com.game.math.Vec2f;
 import com.game.renderer.Renderer;
 import com.game.resourcemanager.ResourceManager;
 import com.game.sound.Sound;
@@ -51,6 +53,7 @@ public class Game {
     private final TileMap map;
 
     private final Camera camera;
+    private Vec2f mainCharacterLocation;
 
     private int updates;
     private int frames;
@@ -134,6 +137,12 @@ public class Game {
         imguiGl3 = new ImGuiImplGl3();
         imguiGlfw.init(window.id(), true);
         imguiGl3.init("#version 330 core");
+
+        mainCharacterLocation = Vec2f.ZERO;
+        eventBus.addObserver(EntityMovedEvent.class, (_, event) -> {
+            if (event.entityId().equals(reshiram.id()))
+                mainCharacterLocation = event.position();
+        });
     }
 
     public void run() {
@@ -195,6 +204,7 @@ public class Game {
 
         renderer.beginScene(camera);
         eventBus.postEvent(new RenderRequestEvent(renderer));
+        renderer.addGrid(mainCharacterLocation);
         renderer.endScene();
 
         imguiGlfw.newFrame();
