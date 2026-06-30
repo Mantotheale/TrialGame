@@ -12,6 +12,8 @@ import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.PlaySoundRequestEvent;
 import com.game.event.instant.*;
 import com.game.input.*;
+import com.game.math.Rectangle;
+import com.game.math.Segment;
 import com.game.math.Vec2f;
 import com.game.renderer.Renderer;
 import com.game.resourcemanager.ResourceManager;
@@ -80,7 +82,7 @@ public class Game {
                 .build();
         window.setVsync(false);
 
-        renderer = new Renderer(eventBus);
+        renderer = new Renderer(eventBus, new Vec2f(720, 720));
         renderer.setClearColor(0.075f, 0.075f, 0.1f, 1.0f);
 
         inputManager = new InputManager(window, eventBus);
@@ -205,6 +207,9 @@ public class Game {
         renderer.beginScene(camera);
         eventBus.postEvent(new RenderRequestEvent(renderer));
         renderer.addGrid(mainCharacterLocation);
+        renderer.addRect(new Rectangle(new Vec2f(0, 10), 5, 7), 0.1f, 0.5f, 0.5f, 1);
+        renderer.addSegment(new Segment(new Vec2f(13, 13), new Vec2f(13, -13)), 0.1f, 0.7f, 0.2f, 0.4f, 1);
+        renderer.addSegment(new Segment(new Vec2f(13, 13), new Vec2f(20, -13)), 0.2f, 0.3f, 0.6f, 0.7f, 1);
         renderer.endScene();
 
         imguiGlfw.newFrame();

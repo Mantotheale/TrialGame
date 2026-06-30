@@ -48,7 +48,7 @@ public class MewTwo implements Entity {
                 new Collider(
                         new Circle(
                                 transform.translation().toVec2f(),
-                                transform.scale().toVec2f().mul(0.8f).x() / 2
+                                transform.scale().toVec2f().scale(0.8f).x() / 2
                         )/*
                         new Rectangle(
                                 transform.translation().toVec2f(),
@@ -88,7 +88,7 @@ public class MewTwo implements Entity {
                             Scale2D.UNIT,
                             3
                     ),
-                    direction.mul(baseSpeed),
+                    direction.scale(baseSpeed),
                     event.resourceManager(),
                     event.entityManager(),
                     bus,

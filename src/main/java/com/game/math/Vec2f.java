@@ -19,8 +19,12 @@ public record Vec2f(float x, float y) {
         return new Vec2f(-x, -y);
     }
 
-    public Vec2f mul(float s) {
+    public Vec2f scale(float s) {
         return new Vec2f(x * s, y * s);
+    }
+
+    public Vec2f scale(Vec2f other) {
+        return new Vec2f(x * other.x, y * other.y);
     }
 
     public float dot(Vec2f other) {
@@ -49,11 +53,15 @@ public record Vec2f(float x, float y) {
     }
 
     public Vec2f reject(Vec2f normal) {
-        return this.sub(normal.mul(this.dot(normal)));
+        return this.sub(normal.scale(this.dot(normal)));
     }
 
     public Vec2f reflect(Vec2f normal) {
-        return this.sub(normal.mul(2 * this.dot(normal)));
+        return this.sub(normal.scale(2 * this.dot(normal)));
+    }
+
+    public Vec2f normal() {
+        return new Vec2f(-y, x);
     }
 
     @Override

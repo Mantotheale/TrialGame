@@ -53,7 +53,7 @@ public class Bullet implements Entity {
                 new Collider(
                         new Circle(
                                 transform.translation().toVec2f(),
-                                transform.scale().toVec2f().mul(0.8f).x() / 2
+                                transform.scale().toVec2f().scale(0.8f).x() / 2
                         ),
                         CollisionType.ELASTIC,
                         false

@@ -58,7 +58,7 @@ public record Circle(Vec2f center, float radius) implements Shape {
                 Rectangle phantomRect = new Rectangle(rect.center(), sumW, sumH);
                 Optional<IntersectionData> rectIntersect = segment.intersection(phantomRect);
                 rectIntersect.ifPresent(x -> {
-                    Vec2f point = center.add(relativeVelocity.mul(x.t()));
+                    Vec2f point = center.add(relativeVelocity.scale(x.t()));
 
                     boolean isFlatEdgeHit =
                             (FloatUtils.geq(point.x(), rect.left()) && FloatUtils.leq(point.x(), rect.right())) ||
@@ -71,7 +71,7 @@ public record Circle(Vec2f center, float radius) implements Shape {
                 Circle phantomCircle = new Circle(new Vec2f(rect.right(), rect.top()), radius);
                 Optional<IntersectionData> circIntersect = segment.intersection(phantomCircle);
                 circIntersect.ifPresent(x -> {
-                    Vec2f point = center.add(relativeVelocity.mul(x.t()));
+                    Vec2f point = center.add(relativeVelocity.scale(x.t()));
                     if (FloatUtils.geq(point.x(), rect.right()) && FloatUtils.geq(point.y(), rect.top()))
                         intersections.add(x);
                 });
@@ -79,7 +79,7 @@ public record Circle(Vec2f center, float radius) implements Shape {
                 phantomCircle = new Circle(new Vec2f(rect.right(), rect.bottom()), radius);
                 circIntersect = segment.intersection(phantomCircle);
                 circIntersect.ifPresent(x -> {
-                    Vec2f point = center.add(relativeVelocity.mul(x.t()));
+                    Vec2f point = center.add(relativeVelocity.scale(x.t()));
                     if (FloatUtils.geq(point.x(), rect.right()) && FloatUtils.leq(point.y(), rect.bottom()))
                         intersections.add(x);
                 });
@@ -87,7 +87,7 @@ public record Circle(Vec2f center, float radius) implements Shape {
                 phantomCircle = new Circle(new Vec2f(rect.left(), rect.bottom()), radius);
                 circIntersect = segment.intersection(phantomCircle);
                 circIntersect.ifPresent(x -> {
-                    Vec2f point = center.add(relativeVelocity.mul(x.t()));
+                    Vec2f point = center.add(relativeVelocity.scale(x.t()));
                     if (FloatUtils.leq(point.x(), rect.left()) && FloatUtils.leq(point.y(), rect.bottom()))
                         intersections.add(x);
                 });
@@ -95,7 +95,7 @@ public record Circle(Vec2f center, float radius) implements Shape {
                 phantomCircle = new Circle(new Vec2f(rect.left(), rect.top()), radius);
                 circIntersect = segment.intersection(phantomCircle);
                 circIntersect.ifPresent(x -> {
-                    Vec2f point = center.add(relativeVelocity.mul(x.t()));
+                    Vec2f point = center.add(relativeVelocity.scale(x.t()));
                     if (FloatUtils.leq(point.x(), rect.left()) && FloatUtils.geq(point.y(), rect.top()))
                         intersections.add(x);
                 });

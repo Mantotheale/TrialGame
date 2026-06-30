@@ -142,7 +142,7 @@ public class CollisionManager {
         }
 
         public ColliderState advance(float dt) {
-            return positionChanged(collider.center().add(velocity.mul(dt)));
+            return positionChanged(collider.center().add(velocity.scale(dt)));
         }
     }
 

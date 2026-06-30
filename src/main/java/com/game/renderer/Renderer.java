@@ -4,6 +4,8 @@ import com.game.camera.Camera;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
 import com.game.event.deferred.FrameBufferResizedEvent;
+import com.game.math.Rectangle;
+import com.game.math.Segment;
 import com.game.math.Vec2f;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
@@ -26,13 +28,22 @@ public class Renderer {
     private final Batch batch;
     private final ShaderProgram textureShaderProgram;
     private final ShaderProgram gridShaderProgram;
+    private final ShaderProgram solidColorShaderProgram;
+    private final ShaderProgram lineShaderProgram;
     private Camera camera;
     private Vec2f gridCenter;
     private final QuadBuffer gridBuffer;
+    private final QuadBuffer squareBuffer;
+    private final ByteBuffer tempQuadBuffer;
+    private int insertedSquares;
+    private final LineBuffer lineBuffer;
+    private final ByteBuffer tempLineBuffer;
+    private int insertedLines;
+    private Vec2f viewportSize;
 
     private final EventObserver<FrameBufferResizedEvent> onFrameBufferResizedFunc = this::onFrameBufferResized;
 
-    public Renderer(EventBus bus) {
+    public Renderer(EventBus bus, Vec2f viewportSize) {
         VertexLayout vertexLayout = new VertexLayout.Builder()
                 .pushFloats(2)
                 .pushInts(1)
@@ -48,6 +59,23 @@ public class Renderer {
         this.gridBuffer = new QuadBuffer(gridVertexLayout, 1);
         this.gridCenter = null;
 
+        VertexLayout squareVertexLayout = new VertexLayout.Builder()
+                .pushFloats(2)
+                .pushFloats(4)
+                .build();
+        this.squareBuffer = new QuadBuffer(squareVertexLayout, 10);
+        this.tempQuadBuffer = MemoryUtil.memAlloc(10 * 4 * squareVertexLayout.size());
+        this.insertedSquares = 0;
+
+        VertexLayout lineVertexLayout = new VertexLayout.Builder()
+                .pushFloats(2)
+                .pushFloats(4)
+                .pushFloats(1)
+                .build();
+        this.lineBuffer = new LineBuffer(lineVertexLayout, 10);
+        this.tempLineBuffer = MemoryUtil.memAlloc(10 * 2 * lineVertexLayout.size());
+        this.insertedLines = 0;
+
         textureShaderProgram = ShaderProgram.fromPaths(
                 Path.of("src/main/resources/shaders/texture_vertex_shader.vert"),
                 Path.of("src/main/resources/shaders/texture_fragment_shader.frag")
@@ -61,9 +89,21 @@ public class Renderer {
                 Path.of("src/main/resources/shaders/grid_fragment_shader.frag")
         );
 
+        solidColorShaderProgram = ShaderProgram.fromPaths(
+                Path.of("src/main/resources/shaders/solid_color_vertex_shader.vert"),
+                Path.of("src/main/resources/shaders/solid_color_fragment_shader.frag")
+        );
+
+        lineShaderProgram = ShaderProgram.fromPaths(
+                Path.of("src/main/resources/shaders/line_vertex_shader.vert"),
+                Path.of("src/main/resources/shaders/line_fragment_shader.frag"),
+                Path.of("src/main/resources/shaders/line_geometry_shader.geom")
+        );
+
         commandQueue = new PriorityQueue<>();
 
         bus.addObserver(FrameBufferResizedEvent.class, onFrameBufferResizedFunc);
+        this.viewportSize = viewportSize;
     }
 
     public void beginScene(Camera camera) {
@@ -77,6 +117,32 @@ public class Renderer {
 
     public void addGrid(Vec2f center) {
         this.gridCenter = center;
+    }
+
+    public void addRect(Rectangle rect, float r, float g, float b, float a) {
+        Vec2f bottomLeft = new Vec2f(rect.left(), rect.bottom());
+        Vec2f bottomRight = new Vec2f(rect.right(), rect.bottom());
+        Vec2f topRight = new Vec2f(rect.right(), rect.top());
+        Vec2f topLeft = new Vec2f(rect.left(), rect.top());
+
+        tempQuadBuffer.putFloat(bottomLeft.x()).putFloat(bottomLeft.y()).putFloat(r).putFloat(g).putFloat(b).putFloat(a);
+        tempQuadBuffer.putFloat(bottomRight.x()).putFloat(bottomRight.y()).putFloat(r).putFloat(g).putFloat(b).putFloat(a);
+        tempQuadBuffer.putFloat(topRight.x()).putFloat(topRight.y()).putFloat(r).putFloat(g).putFloat(b).putFloat(a);
+        tempQuadBuffer.putFloat(topLeft.x()).putFloat(topLeft.y()).putFloat(r).putFloat(g).putFloat(b).putFloat(a);
+
+        insertedSquares++;
+    }
+
+    public void addSegment(Segment segment, float thickness, float r, float g, float b, float a) {
+        tempLineBuffer
+                .putFloat(segment.origin().x()).putFloat(segment.origin().y())
+                .putFloat(r).putFloat(g).putFloat(b).putFloat(a)
+                .putFloat(thickness);
+        tempLineBuffer
+                .putFloat(segment.destination().x()).putFloat(segment.destination().y())
+                .putFloat(r).putFloat(g).putFloat(b).putFloat(a)
+                .putFloat(thickness);
+        insertedLines++;
     }
 
     public void endScene() {
@@ -112,6 +178,30 @@ public class Renderer {
             gridCenter = null;
         }
 
+        if (insertedSquares > 0) {
+            squareBuffer.setData(tempQuadBuffer.flip());
+            glUseProgram(solidColorShaderProgram.id());
+            solidColorShaderProgram.setMatrix4f("viewProjection", camera.matrix());
+            glBindVertexArray(squareBuffer.id());
+            glDrawElements(GL_TRIANGLES, QuadBuffer.INDICES_PER_QUAD * insertedSquares, GL_UNSIGNED_INT, 0);
+
+            tempQuadBuffer.clear();
+            insertedSquares = 0;
+        }
+
+        if (insertedLines > 0) {
+            lineBuffer.setData(tempLineBuffer.flip());
+            glUseProgram(lineShaderProgram.id());
+            lineShaderProgram.setMatrix4f("viewProjection", camera.matrix());
+            lineShaderProgram.setVec2f("viewportSize", viewportSize);
+            lineShaderProgram.setFloat("lineWidth", 5);
+            glBindVertexArray(lineBuffer.id());
+            glDrawArrays(GL_LINES, 0, insertedLines * 2);
+
+            tempLineBuffer.clear();
+            insertedLines = 0;
+        }
+
         camera = null;
     }
 
@@ -129,11 +219,12 @@ public class Renderer {
 
     private void onFrameBufferResized(EventBus bus, FrameBufferResizedEvent event) {
         glViewport(0, 0, event.newWidth(), event.newHeight());
+        viewportSize = new Vec2f(event.newWidth(), event.newHeight());
     }
 
-    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f, -0.5f).mul(20);
-    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f, -0.5f).mul(20);
-    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f, 0.5f).mul(20);
-    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f, 0.5f).mul(20);
+    private final static Vec2f BOTTOM_LEFT = new Vec2f(-0.5f, -0.5f).scale(20);
+    private final static Vec2f BOTTOM_RIGHT = new Vec2f(0.5f, -0.5f).scale(20);
+    private final static Vec2f TOP_RIGHT = new Vec2f(0.5f, 0.5f).scale(20);
+    private final static Vec2f TOP_LEFT = new Vec2f(-0.5f, 0.5f).scale(20);
 
 }

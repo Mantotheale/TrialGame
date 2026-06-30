@@ -118,13 +118,13 @@ public class Vec2fTest {
     }
 
     @Test
-    public void mulTest() {
-        Assertions.assertEquals(new Vec2f(2, 4), new Vec2f(1, 2).mul(2));
-        Assertions.assertEquals(new Vec2f(-2, -4), new Vec2f(1, 2).mul(-2));
-        Assertions.assertEquals(new Vec2f(0.5f, 1), new Vec2f(1, 2).mul(0.5f));
-        Assertions.assertEquals(Vec2f.ZERO, new Vec2f(1, 2).mul(0));
-        Assertions.assertEquals(new Vec2f(1, 2), new Vec2f(1, 2).mul(1));
-        Assertions.assertEquals(new Vec2f(-1, -2), new Vec2f(1, 2).mul(-1));
+    public void scaleTest() {
+        Assertions.assertEquals(new Vec2f(2, 4), new Vec2f(1, 2).scale(2));
+        Assertions.assertEquals(new Vec2f(-2, -4), new Vec2f(1, 2).scale(-2));
+        Assertions.assertEquals(new Vec2f(0.5f, 1), new Vec2f(1, 2).scale(0.5f));
+        Assertions.assertEquals(Vec2f.ZERO, new Vec2f(1, 2).scale(0));
+        Assertions.assertEquals(new Vec2f(1, 2), new Vec2f(1, 2).scale(1));
+        Assertions.assertEquals(new Vec2f(-1, -2), new Vec2f(1, 2).scale(-1));
     }
 
     @Test

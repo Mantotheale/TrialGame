@@ -61,7 +61,7 @@ public class Reshiram implements Entity {
                         )*/
                         new Rectangle(
                                 transform.translation().toVec2f(),
-                                transform.scale().toVec2f().mul(0.8f)
+                                transform.scale().toVec2f().scale(0.8f)
                         ),
                         CollisionType.INELASTIC,
                         true
@@ -85,7 +85,7 @@ public class Reshiram implements Entity {
 
         if (!direction.equals(Vec2f.ZERO)) {
             float movementSpeed = 15 * (float) Game.UPDATE_TIME;
-            velocity = direction.normalize().mul(movementSpeed);
+            velocity = direction.normalize().scale(movementSpeed);
         }
 
         bus.postEvent(new EntityVelocityChangedEvent(id, velocity));

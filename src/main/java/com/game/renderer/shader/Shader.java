@@ -21,7 +21,7 @@ class Shader {
         glShaderSource(id, shaderSource);
         glCompileShader(id);
         if (glGetShaderi(id, GL_COMPILE_STATUS) == GL_FALSE) {
-            throw new IllegalStateException("Couldn't compile vertex the shader");
+            throw new IllegalStateException("Couldn't compile the shader.\nShaderType: " + shaderType + "\nSource:\n" + shaderSource);
         }
     }
 
