@@ -194,7 +194,7 @@ public class Renderer {
             glUseProgram(lineShaderProgram.id());
             lineShaderProgram.setMatrix4f("viewProjection", camera.matrix());
             lineShaderProgram.setVec2f("viewportSize", viewportSize);
-            lineShaderProgram.setFloat("lineWidth", 5);
+            //lineShaderProgram.setFloat("lineWidth", 3);
             glBindVertexArray(lineBuffer.id());
             glDrawArrays(GL_LINES, 0, insertedLines * 2);
 

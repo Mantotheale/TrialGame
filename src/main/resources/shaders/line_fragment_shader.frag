@@ -1,16 +1,17 @@
 #version 330 core
 
 in vec4 gColor;
-in float gLineDistance;
+noperspective in float gLineDistance;
+noperspective in float gThickness;
 
 out vec4 fragColor;
 
-uniform float lineWidth;
+const float FRINGE = 1.5;
 
 void main() {
     float absDistance = abs(gLineDistance);
-    float halfWidth = lineWidth * 0.5;
+    float halfWidth = gThickness * 0.5;
 
-    float alpha = 1 - smoothstep(halfWidth, halfWidth + 1, absDistance);
+    float alpha = 1 - smoothstep(halfWidth, halfWidth + FRINGE, absDistance);
     fragColor = vec4(gColor.rgb, gColor.a * alpha);
 }
