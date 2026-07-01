@@ -12,6 +12,7 @@ import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.PlaySoundRequestEvent;
 import com.game.event.instant.*;
 import com.game.input.*;
+import com.game.math.Circle;
 import com.game.math.Rectangle;
 import com.game.math.Segment;
 import com.game.math.Vec2f;
@@ -210,6 +211,7 @@ public class Game {
         renderer.addRect(new Rectangle(new Vec2f(0, 10), 5, 7), 0.1f, 0.5f, 0.5f, 1);
         renderer.addSegment(new Segment(new Vec2f(13, 13), new Vec2f(13, -13)), 1, 0.7f, 0.2f, 0.4f, 1);
         renderer.addSegment(new Segment(new Vec2f(13, 13), new Vec2f(20, -13)), 3, 0.3f, 0.6f, 0.7f, 1);
+        renderer.addCircle(new Circle(new Vec2f(-15, 15), 4), 0.7f, 0.2f, 0.1f, 1);
         renderer.endScene();
 
         imguiGlfw.newFrame();

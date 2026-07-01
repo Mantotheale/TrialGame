@@ -4,6 +4,7 @@ import com.game.camera.Camera;
 import com.game.event.bus.EventBus;
 import com.game.event.bus.EventObserver;
 import com.game.event.deferred.FrameBufferResizedEvent;
+import com.game.math.Circle;
 import com.game.math.Rectangle;
 import com.game.math.Segment;
 import com.game.math.Vec2f;
@@ -30,6 +31,7 @@ public class Renderer {
     private final ShaderProgram gridShaderProgram;
     private final ShaderProgram solidColorShaderProgram;
     private final ShaderProgram lineShaderProgram;
+    private final ShaderProgram circleShaderProgram;
     private Camera camera;
     private Vec2f gridCenter;
     private final QuadBuffer gridBuffer;
@@ -40,6 +42,9 @@ public class Renderer {
     private final ByteBuffer tempLineBuffer;
     private int insertedLines;
     private Vec2f viewportSize;
+    private final CircleBuffer circleBuffer;
+    private final ByteBuffer tempCircleBuffer;
+    private int insertedCircles;
 
     private final EventObserver<FrameBufferResizedEvent> onFrameBufferResizedFunc = this::onFrameBufferResized;
 
@@ -76,6 +81,10 @@ public class Renderer {
         this.tempLineBuffer = MemoryUtil.memAlloc(10 * 2 * lineVertexLayout.size());
         this.insertedLines = 0;
 
+        this.circleBuffer = new CircleBuffer(10);
+        this.tempCircleBuffer = MemoryUtil.memAlloc(10 * (2 + 1 + 4) * Float.BYTES);
+        this.insertedCircles = 0;
+
         textureShaderProgram = ShaderProgram.fromPaths(
                 Path.of("src/main/resources/shaders/texture_vertex_shader.vert"),
                 Path.of("src/main/resources/shaders/texture_fragment_shader.frag")
@@ -98,6 +107,12 @@ public class Renderer {
                 Path.of("src/main/resources/shaders/line_vertex_shader.vert"),
                 Path.of("src/main/resources/shaders/line_fragment_shader.frag"),
                 Path.of("src/main/resources/shaders/line_geometry_shader.geom")
+        );
+
+        circleShaderProgram = ShaderProgram.fromPaths(
+                Path.of("src/main/resources/shaders/circle_vertex_shader.vert"),
+                Path.of("src/main/resources/shaders/circle_fragment_shader.frag"),
+                Path.of("src/main/resources/shaders/circle_geometry_shader.geom")
         );
 
         commandQueue = new PriorityQueue<>();
@@ -143,6 +158,14 @@ public class Renderer {
                 .putFloat(r).putFloat(g).putFloat(b).putFloat(a)
                 .putFloat(thickness);
         insertedLines++;
+    }
+
+    public void addCircle(Circle circle, float r, float g, float b, float a) {
+        tempCircleBuffer
+                .putFloat(circle.center().x()).putFloat(circle.center().y())
+                .putFloat(circle.radius())
+                .putFloat(r).putFloat(g).putFloat(b).putFloat(a);
+        insertedCircles++;
     }
 
     public void endScene() {
@@ -194,12 +217,22 @@ public class Renderer {
             glUseProgram(lineShaderProgram.id());
             lineShaderProgram.setMatrix4f("viewProjection", camera.matrix());
             lineShaderProgram.setVec2f("viewportSize", viewportSize);
-            //lineShaderProgram.setFloat("lineWidth", 3);
             glBindVertexArray(lineBuffer.id());
             glDrawArrays(GL_LINES, 0, insertedLines * 2);
 
             tempLineBuffer.clear();
             insertedLines = 0;
+        }
+
+        if (insertedCircles > 0) {
+            circleBuffer.setData(tempCircleBuffer.flip());
+            glUseProgram(circleShaderProgram.id());
+            circleShaderProgram.setMatrix4f("viewProjection", camera.matrix());
+            glBindVertexArray(circleBuffer.id());
+            glDrawArrays(GL_POINTS, 0, insertedCircles);
+
+            tempCircleBuffer.clear();
+            insertedCircles = 0;
         }
 
         camera = null;
