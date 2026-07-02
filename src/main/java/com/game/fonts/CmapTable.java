@@ -1,4 +1,4 @@
-package com.game.util.fonts;
+package com.game.fonts;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -7,8 +7,8 @@ import java.nio.channels.ByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-record CmapHeader(short version, short numTables, List<EncodingRecord> encodingRecords) {
-    public static CmapHeader fromChannel(ByteChannel channel, ByteBuffer u16Buffer, ByteBuffer u32Buffer) {
+record CmapTable(short version, short numTables, List<EncodingRecord> encodingRecords) {
+    public static CmapTable fromChannel(ByteChannel channel, ByteBuffer u16Buffer, ByteBuffer u32Buffer) {
         short version = FontUtils.extract16Bit(channel, u16Buffer);
         short numTables = FontUtils.extract16Bit(channel, u16Buffer);
 
@@ -19,13 +19,13 @@ record CmapHeader(short version, short numTables, List<EncodingRecord> encodingR
         if (encodingRecords.isEmpty())
             throw new IllegalStateException("The encoding records of the cmap table are empty");
 
-        return new CmapHeader(version, numTables, encodingRecords);
+        return new CmapTable(version, numTables, encodingRecords);
     }
 
     @Override
     public @NotNull String toString() {
         StringBuilder sb = new StringBuilder()
-                .append("CmapHeader(\n")
+                .append("CmapTable(\n")
                 .append("\tversion:").append(Short.toUnsignedInt(version)).append(",\n")
                 .append("\tnumTables:").append(Short.toUnsignedInt(numTables)).append(",\n")
                 .append("\tencodingRecords:\n");

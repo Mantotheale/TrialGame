@@ -1,4 +1,4 @@
-package com.game.util.fonts;
+package com.game.fonts;
 
 import org.jetbrains.annotations.NotNull;
 

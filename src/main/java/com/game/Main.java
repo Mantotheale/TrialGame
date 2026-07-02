@@ -1,6 +1,6 @@
 package com.game;
 
-import com.game.util.fonts.FontUtils;
+import com.game.fonts.FontUtils;
 
 import java.nio.file.Path;
 
