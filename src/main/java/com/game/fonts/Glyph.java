@@ -13,7 +13,7 @@ sealed interface Glyph {
     static Glyph fromChannel(ByteChannel channel, ByteBuffer u8Buffer, ByteBuffer u16Buffer, short idx) {
         GlyphHeader glyphHeader = GlyphHeader.fromChannel(channel, u16Buffer, idx);
 
-        if (glyphHeader.numberOfCountours() >= 0) {
+        if (glyphHeader.numberOfContours() >= 0) {
             return SimpleGlyph.fromChannel(channel, u8Buffer, u16Buffer, glyphHeader);
         } else {
             return CompositeGlyph.fromChannel(channel, u8Buffer, u16Buffer, glyphHeader);
@@ -37,9 +37,9 @@ sealed interface Glyph {
     ) implements Glyph {
         static SimpleGlyph fromChannel(ByteChannel channel, ByteBuffer u8Buffer, ByteBuffer u16Buffer, GlyphHeader glyphHeader) {
             List<Contour> contours = new ArrayList<>();
-            if (glyphHeader.numberOfCountours() != 0)
+            if (glyphHeader.numberOfContours() != 0)
                 contours.add(Contour.firstContour(FontUtils.extract16Bit(channel, u16Buffer)));
-            for (int i = 1; i < glyphHeader.numberOfCountours(); i++)
+            for (int i = 1; i < glyphHeader.numberOfContours(); i++)
                 contours.add(Contour.fromPreviousContour(contours.get(i - 1), FontUtils.extract16Bit(channel, u16Buffer)));
 
             short instructionLength = FontUtils.extract16Bit(channel, u16Buffer);

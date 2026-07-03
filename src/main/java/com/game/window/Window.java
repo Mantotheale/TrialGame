@@ -11,9 +11,14 @@ import static org.lwjgl.glfw.GLFW.*;
 public class Window implements InputObservable {
     private final long id;
     private final Set<InputObserver> observers;
+    private int width;
+    private int height;
 
-    Window(long id) {
+    Window(long id, int width, int height) {
         this.id = id;
+        this.width = width;
+        this.height = height;
+
         observers = new HashSet<>();
 
         glfwSetKeyCallback(id, this::keyCallback);
@@ -35,6 +40,14 @@ public class Window implements InputObservable {
 
     public void swapBuffers() {
         glfwSwapBuffers(id);
+    }
+
+    public int width() {
+        return width;
+    }
+
+    public int height() {
+        return height;
     }
 
     public void delete() {
@@ -67,10 +80,14 @@ public class Window implements InputObservable {
     }
 
     private void closeCallback(long _window) {
+
         notifyObservers(CloseWindow.INSTANCE);
     }
 
     private void frameBufferSizeCallback(long _window, int width, int height) {
+        this.width = width;
+        this.height = height;
+
         notifyObservers(new ResizeFrameBuffer(width, height));
     }
 }

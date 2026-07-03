@@ -11,6 +11,7 @@ import com.game.math.Vec2f;
 import com.game.renderer.shader.ShaderProgram;
 import com.game.renderer.texture.Texture;
 import com.game.transform.Transform2D;
+import com.game.util.Color;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
@@ -77,12 +78,12 @@ public class Renderer {
                 .pushFloats(4)
                 .pushFloats(1)
                 .build();
-        this.lineBuffer = new LineBuffer(lineVertexLayout, 10);
-        this.tempLineBuffer = MemoryUtil.memAlloc(10 * 2 * lineVertexLayout.size());
+        this.lineBuffer = new LineBuffer(lineVertexLayout, 10000);
+        this.tempLineBuffer = MemoryUtil.memAlloc(10000 * 2 * lineVertexLayout.size());
         this.insertedLines = 0;
 
-        this.circleBuffer = new CircleBuffer(10);
-        this.tempCircleBuffer = MemoryUtil.memAlloc(10 * (2 + 1 + 4) * Float.BYTES);
+        this.circleBuffer = new CircleBuffer(10000);
+        this.tempCircleBuffer = MemoryUtil.memAlloc(10000 * (2 + 1 + 4) * Float.BYTES);
         this.insertedCircles = 0;
 
         textureShaderProgram = ShaderProgram.fromPaths(
@@ -160,12 +161,20 @@ public class Renderer {
         insertedLines++;
     }
 
+    public void addSegment(Segment segment, float thickness, Color color) {
+        addSegment(segment, thickness, color.r(), color.g(), color.b(), color.a());
+    }
+
     public void addCircle(Circle circle, float r, float g, float b, float a) {
         tempCircleBuffer
                 .putFloat(circle.center().x()).putFloat(circle.center().y())
                 .putFloat(circle.radius())
                 .putFloat(r).putFloat(g).putFloat(b).putFloat(a);
         insertedCircles++;
+    }
+
+    public void addCircle(Circle circle, Color color) {
+        addCircle(circle, color.r(), color.g(), color.b(), color.a());
     }
 
     public void endScene() {

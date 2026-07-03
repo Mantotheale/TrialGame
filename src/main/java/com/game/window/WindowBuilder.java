@@ -111,6 +111,6 @@ public class WindowBuilder {
 
         GL.createCapabilities();
 
-        return new Window(window);
+        return new Window(window, width, height);
     }
 }

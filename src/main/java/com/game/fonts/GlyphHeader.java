@@ -7,7 +7,7 @@ import java.nio.channels.ByteChannel;
 
 record GlyphHeader(
         short idx,
-        short numberOfCountours,
+        short numberOfContours,
         short xMin,
         short yMin,
         short xMax,
@@ -28,7 +28,7 @@ record GlyphHeader(
     public @NotNull String toString() {
         return "GlyphHeader(" +
                 "idx: " + Short.toUnsignedInt(idx) + ", " +
-                "numberOfCountours: " + numberOfCountours + ", " +
+                "numberOfContours: " + numberOfContours + ", " +
                 "xMin: " + xMin + ", " +
                 "yMin: " + yMin + ", " +
                 "xMax: " + xMax + ", " +

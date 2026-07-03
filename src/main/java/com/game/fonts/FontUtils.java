@@ -13,9 +13,8 @@ import java.util.List;
 public class FontUtils {
     private FontUtils() { }
 
-    public static void openFont(Path path) {
+    public static FontData openFont(Path path) {
         try(FileInputStream s = new FileInputStream(path.toFile())) {
-            System.out.println("File: " + path);
             FileChannel channel = s.getChannel();
             ByteBuffer u64Buffer = ByteBuffer.allocateDirect(8).order(ByteOrder.BIG_ENDIAN);
             ByteBuffer u32Buffer = ByteBuffer.allocateDirect(4).order(ByteOrder.BIG_ENDIAN);
@@ -37,15 +36,12 @@ public class FontUtils {
             EncodingRecord bestEncoding = cmapTable.encodingRecords().stream().max(EncodingRecord.QUALITY_COMPARATOR).orElseThrow();
             if (!bestEncoding.isUnicodeMapping())
                 throw new IllegalStateException("No unicode mapping is supported");
-            System.out.println("best encoding: " + bestEncoding);
 
             int bestEncodingOffset = cmapTableHeader.offset() + bestEncoding.offset();
             channel.position(bestEncodingOffset);
 
             short version = extract16Bit(channel, u16Buffer);
             Cmap cmap = Cmap.fromChannel(version, channel, u16Buffer, u32Buffer);
-            int unicode = '珠';
-            System.out.println(cmap.getGlyphId(unicode));
 
             TableHeader headTableHeader = tableHeaders.stream()
                     .filter(h -> h.tag().equals("head"))
@@ -110,6 +106,8 @@ public class FontUtils {
                     .orElseThrow(() -> new IllegalArgumentException("The specified font doesn't contain a glyf table"));
             GlyfTable glyfTable = GlyfTable.fromChannel(channel, u8Buffer, u16Buffer, glyfTableHeader.offset(), locaTable);
             //System.out.println(glyfTable);
+
+            return new FontData(cmap, hmtxTable, glyfTable);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

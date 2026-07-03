@@ -27,6 +27,20 @@ public record Vec2f(float x, float y) {
         return new Vec2f(x * other.x, y * other.y);
     }
 
+    public Vec2f div(Vec2f other) {
+        if (FloatUtils.eq(other.x, 0) || FloatUtils.eq(other.y, 0))
+            throw new IllegalArgumentException("Can't divide by a vector containing zeros. Was " + other);
+
+        return new Vec2f(x / other.x, y / other.y);
+    }
+
+    public Vec2f div(float d) {
+        if (FloatUtils.eq(d, 0))
+            throw new IllegalArgumentException("Can't divide by zero. Was " + d);
+
+        return new Vec2f(x / d, y / d);
+    }
+
     public float dot(Vec2f other) {
         return this.x * other.x + this.y * other.y;
     }
@@ -62,6 +76,10 @@ public record Vec2f(float x, float y) {
 
     public Vec2f normal() {
         return new Vec2f(-y, x);
+    }
+
+    public Vec2f middlePoint(Vec2f other) {
+        return new Vec2f((x + other.x) / 2, (y + other.y) / 2);
     }
 
     @Override

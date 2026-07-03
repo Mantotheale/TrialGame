@@ -2,9 +2,9 @@ package com.game.fonts;
 
 import org.jetbrains.annotations.NotNull;
 
-record FontPoint(short x, short y, boolean onCurve) {
+public record FontPoint(short x, short y, boolean onCurve) {
     @Override
     public @NotNull String toString() {
-        return "FontCoord(x: " + x + ", y: " + y + ", onCurve: " + onCurve + ")";
+        return "FontPoint(x: " + x + ", y: " + y + ", onCurve: " + onCurve + ")";
     }
 }
