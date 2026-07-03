@@ -9,7 +9,7 @@ public class Main {
         FontUtils.openFont(Path.of("src/main/resources/fonts/JetBrainsMono-Regular.ttf"));
         FontUtils.openFont(Path.of("src/main/resources/fonts/NotoSansJP-Regular.ttf"));
 
-        //Game game = new Game();
-        //game.run();
+        Game game = new Game();
+        game.run();
     }
 }

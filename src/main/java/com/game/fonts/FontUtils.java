@@ -42,17 +42,10 @@ public class FontUtils {
             int bestEncodingOffset = cmapTableHeader.offset() + bestEncoding.offset();
             channel.position(bestEncodingOffset);
 
-            int version = extract16Bit(channel, u16Buffer);
-            if (version == 4) {
-                CmapSubtableFormat4 format = CmapSubtableFormat4.fromChannel(channel, u16Buffer);
-
-                short unicode = '/';
-                System.out.println(Short.toUnsignedInt(format.getGlyphId(unicode)));
-            } else {
-                CmapSubtableFormat12 format = CmapSubtableFormat12.fromChannel(channel, u16Buffer, u32Buffer);
-                int unicode = "漫".codePointAt(0);
-                System.out.println(Integer.toUnsignedLong(format.getGlyphId(unicode)));
-            }
+            short version = extract16Bit(channel, u16Buffer);
+            Cmap cmap = Cmap.fromChannel(version, channel, u16Buffer, u32Buffer);
+            int unicode = '珠';
+            System.out.println(cmap.getGlyphId(unicode));
 
             TableHeader headTableHeader = tableHeaders.stream()
                     .filter(h -> h.tag().equals("head"))
