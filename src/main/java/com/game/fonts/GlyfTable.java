@@ -19,7 +19,8 @@ record GlyfTable(List<Glyph> glyphs) {
                     glyphs.add(Glyph.EMPTY);
                 } else {
                     channel.position(Integer.toUnsignedLong(tableOffset) + Integer.toUnsignedLong(ol.offset()));
-                    glyphs.add(Glyph.fromChannel(channel, u16Buffer));
+                    Glyph glyph = Glyph.fromChannel(channel, u8Buffer, u16Buffer, (short) glyphs.size());
+                    glyphs.add(glyph);
                 }
             }
 

@@ -50,7 +50,7 @@ public class FontUtils {
                 System.out.println(Short.toUnsignedInt(format.getGlyphId(unicode)));
             } else {
                 CmapSubtableFormat12 format = CmapSubtableFormat12.fromChannel(channel, u16Buffer, u32Buffer);
-                int unicode = "珠".codePointAt(0);
+                int unicode = "漫".codePointAt(0);
                 System.out.println(Integer.toUnsignedLong(format.getGlyphId(unicode)));
             }
 
@@ -61,7 +61,7 @@ public class FontUtils {
             channel.position(headTableHeader.offset());
 
             HeadTable headTable = HeadTable.fromChannel(channel, u16Buffer, u32Buffer, u64Buffer);
-            System.out.println(headTable);
+            //System.out.println(headTable);
 
             TableHeader hheaTableHeader = tableHeaders.stream()
                     .filter(h -> h.tag().equals("hhea"))
@@ -70,7 +70,7 @@ public class FontUtils {
             channel.position(hheaTableHeader.offset());
 
             HheaTable hheaTable = HheaTable.fromChannel(channel, u16Buffer);
-            System.out.println(hheaTable);
+            //System.out.println(hheaTable);
 
             TableHeader maxpTableHeader = tableHeaders.stream()
                     .filter(h -> h.tag().equals("maxp"))
@@ -86,7 +86,7 @@ public class FontUtils {
                 throw new IllegalStateException("Unsupported maxp table minor version. Only version 0 is supported. It was " + Short.toUnsignedInt(minorVersion));
 
             MaxpTable maxpTable = MaxpTable.fromChannel(channel, u16Buffer);
-            System.out.println(maxpTable);
+            //System.out.println(maxpTable);
 
             TableHeader hmtxTableHeader = tableHeaders.stream()
                     .filter(h -> h.tag().equals("hmtx"))
@@ -96,7 +96,6 @@ public class FontUtils {
 
             HmtxTable hmtxTable = HmtxTable.fromChannel(channel, u16Buffer, maxpTable.numGlyphs(), hheaTable.numberOfHMetrics());
             //System.out.println(hmtxTable);
-            System.out.println(tableHeaders);
 
             TableHeader locaTableHeader = tableHeaders.stream()
                     .filter(h -> h.tag().equals("loca"))
@@ -117,7 +116,7 @@ public class FontUtils {
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("The specified font doesn't contain a glyf table"));
             GlyfTable glyfTable = GlyfTable.fromChannel(channel, u8Buffer, u16Buffer, glyfTableHeader.offset(), locaTable);
-            System.out.println(glyfTable);
+            //System.out.println(glyfTable);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -125,7 +124,8 @@ public class FontUtils {
 
     public static int extract32Bit(ByteChannel channel, ByteBuffer u32Buffer) {
         try {
-            channel.read(u32Buffer);
+            int readBytes = channel.read(u32Buffer);
+            if (readBytes != 4) throw new IllegalStateException("The buffer couldn't read 4 bytes. It read " + readBytes);
             u32Buffer.flip();
             int value = u32Buffer.getInt();
             u32Buffer.flip();
@@ -137,7 +137,8 @@ public class FontUtils {
 
     public static short extract16Bit(ByteChannel channel, ByteBuffer u16Buffer) {
         try {
-            channel.read(u16Buffer);
+            int readBytes = channel.read(u16Buffer);
+            if (readBytes != 2) throw new IllegalStateException("The buffer couldn't read 2 bytes. It read " + readBytes);
             u16Buffer.flip();
             short value = u16Buffer.getShort();
             u16Buffer.flip();
@@ -149,11 +150,38 @@ public class FontUtils {
 
     public static long extract64Bit(ByteChannel channel, ByteBuffer u64Buffer) {
         try {
-            channel.read(u64Buffer);
+            int readBytes = channel.read(u64Buffer);
+            if (readBytes != 8) throw new IllegalStateException("The buffer couldn't read 8 bytes. It read " + readBytes);
             u64Buffer.flip();
             long value = u64Buffer.getLong();
             u64Buffer.flip();
             return value;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte extract8Bit(ByteChannel channel, ByteBuffer u8Buffer) {
+        try {
+            int readBytes = channel.read(u8Buffer);
+            if (readBytes != 1) throw new IllegalStateException("The buffer couldn't read 1 bytes. It read " + readBytes);
+            u8Buffer.flip();
+            byte value = u8Buffer.get();
+            u8Buffer.flip();
+            return value;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static float extractF2Dot14(ByteChannel channel, ByteBuffer u16Buffer) {
+        try {
+            int readBytes = channel.read(u16Buffer);
+            if (readBytes != 2) throw new IllegalStateException("The buffer couldn't read 2 bytes. It read " + readBytes);
+            u16Buffer.flip();
+            short value = u16Buffer.getShort();
+            u16Buffer.flip();
+            return value / 16384.0f; // value / 2^14
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

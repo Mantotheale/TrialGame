@@ -26,7 +26,8 @@ record LocaTable(List<OffsetAndLength> offsetsAndLenghts) {
             else
                 offsets.add(Short.toUnsignedInt(FontUtils.extract16Bit(channel, u16Buffer)) * 2);
 
-            for (int i = 1; i < numGlyphs; i++) {
+            // The last entry is a dummy, just there to get the correct length of the last glyph data
+            for (int i = 1; i < numGlyphs + 1; i++) {
                 if (areInts)
                     offsets.add(FontUtils.extract32Bit(channel, u32Buffer));
                 else
