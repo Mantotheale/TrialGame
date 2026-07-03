@@ -20,6 +20,7 @@ public class FontUtils {
             ByteBuffer u64Buffer = ByteBuffer.allocateDirect(8).order(ByteOrder.BIG_ENDIAN);
             ByteBuffer u32Buffer = ByteBuffer.allocateDirect(4).order(ByteOrder.BIG_ENDIAN);
             ByteBuffer u16Buffer = ByteBuffer.allocateDirect(2).order(ByteOrder.BIG_ENDIAN);
+            ByteBuffer u8Buffer = ByteBuffer.allocateDirect(1).order(ByteOrder.BIG_ENDIAN);
 
             OffsetSubtable offsetSubtable = OffsetSubtable.fromChannel(channel, u16Buffer, u32Buffer, path);
             List<TableHeader> tableHeaders = new ArrayList<>();
@@ -96,6 +97,27 @@ public class FontUtils {
             HmtxTable hmtxTable = HmtxTable.fromChannel(channel, u16Buffer, maxpTable.numGlyphs(), hheaTable.numberOfHMetrics());
             //System.out.println(hmtxTable);
             System.out.println(tableHeaders);
+
+            TableHeader locaTableHeader = tableHeaders.stream()
+                    .filter(h -> h.tag().equals("loca"))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("The specified font doesn't contain a loca table"));
+            channel.position(locaTableHeader.offset());
+
+            LocaTable locaTable;
+            if (headTable.indexToLocFormat() == 0) {
+                locaTable = LocaTable.fromChannelIndexShort(channel, u16Buffer, maxpTable.numGlyphs());
+            } else if (headTable.indexToLocFormat() == 1) {
+                locaTable = LocaTable.fromChannelIndexInt(channel, u32Buffer, maxpTable.numGlyphs());
+            } else
+                throw new IllegalStateException("The specified indexToLocFormat is unsupported. Only 0 and 1 are supported. It was " + headTable.indexToLocFormat());
+
+            TableHeader glyfTableHeader = tableHeaders.stream()
+                    .filter(h -> h.tag().equals("glyf"))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("The specified font doesn't contain a glyf table"));
+            GlyfTable glyfTable = GlyfTable.fromChannel(channel, u8Buffer, u16Buffer, glyfTableHeader.offset(), locaTable);
+            System.out.println(glyfTable);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
