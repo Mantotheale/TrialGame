@@ -3,6 +3,10 @@ package com.game.fonts;
 import org.jetbrains.annotations.NotNull;
 
 public record Contour(short offset, short end, short length) {
+    public Contour shift(short shiftAmount) {
+        return new Contour((short) (offset + shiftAmount), (short) (end + shiftAmount), length);
+    }
+
     public static Contour firstContour(short end) {
         return new Contour((short) 0, end, (short) (Short.toUnsignedInt(end) + 1));
     }

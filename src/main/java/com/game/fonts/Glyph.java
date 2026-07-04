@@ -173,7 +173,7 @@ sealed interface Glyph {
                 if (flag.weHaveAScale()) {
                     transformation = new GlyphTransformation.UniformScale(
                             FontUtils.extractF2Dot14(channel, u16Buffer),
-                            flag.scaledComponentOffset(),
+                            !flag.unscaledComponentOffset() && flag.scaledComponentOffset(),
                             flag.roundXYtoGrid()
                     );
                 } else if (flag.weHaveAnXYScale()) {
@@ -182,17 +182,17 @@ sealed interface Glyph {
                     transformation = new GlyphTransformation.UnevenScale(
                             xScale,
                             yScale,
-                            flag.scaledComponentOffset(),
+                            !flag.unscaledComponentOffset() && flag.scaledComponentOffset(),
                             flag.roundXYtoGrid()
                     );
                 } else if (flag.weHaveA2by2()) {
-                    float s00 = FontUtils.extractF2Dot14(channel, u16Buffer);
-                    float s01 = FontUtils.extractF2Dot14(channel, u16Buffer);
-                    float s10 = FontUtils.extractF2Dot14(channel, u16Buffer);
-                    float s11 = FontUtils.extractF2Dot14(channel, u16Buffer);
+                    float a = FontUtils.extractF2Dot14(channel, u16Buffer);
+                    float b = FontUtils.extractF2Dot14(channel, u16Buffer);
+                    float c = FontUtils.extractF2Dot14(channel, u16Buffer);
+                    float d = FontUtils.extractF2Dot14(channel, u16Buffer);
                     transformation = new GlyphTransformation.MatrixScale(
-                            s00, s01, s10, s11,
-                            flag.scaledComponentOffset(),
+                            a, b, c, d,
+                            !flag.unscaledComponentOffset() && flag.scaledComponentOffset(),
                             flag.roundXYtoGrid()
                     );
                 } else {

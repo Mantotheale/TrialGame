@@ -12,6 +12,7 @@ import com.game.event.deferred.EntityMovedEvent;
 import com.game.event.deferred.PlaySoundRequestEvent;
 import com.game.event.instant.*;
 import com.game.fonts.FontData;
+import com.game.fonts.FontPoint;
 import com.game.fonts.FontUtils;
 import com.game.fonts.GlyphData;
 import com.game.input.*;
@@ -156,74 +157,90 @@ public class Game {
                 mainCharacterLocation = event.position();
         });*/
 
-        //FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/JetBrainsMono-Regular.ttf"));
-        //int glyphId = fontData.getGlyphId('P');
         FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/NotoSansJP-Regular.ttf"));
-        int glyphId = fontData.getGlyphId('珠');
-        GlyphData glyphData = fontData.glyphData(glyphId);
+        //FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/JetBrainsMono-Regular.ttf"));
+        float scale = 100f / fontData.fontSize();
 
-        Rectangle bbox = glyphData.boundingBox();
-        Vec2f displayBoxSize = new Vec2f(900, 900);
-        Vec2f glyphScaling = displayBoxSize.div(new Vec2f(bbox.width(), bbox.height()));
-        Vec2f glyphTranspose = bbox.center().scale(glyphScaling).negate();
+        String s = "珠里が大好き";
 
-        points = glyphData.points().stream()
-                .map(fp ->
-                        new FontCircle(
-                                new Circle(
-                                        new Vec2f(fp.x(), fp.y()).scale(glyphScaling).add(glyphTranspose),
-                                        5
-                                ),
-                                fp.onCurve()
-                        )
-                ).toList();
+        float length = s.codePoints()
+                .map(code -> fontData.glyphData(fontData.getGlyphId(code)).advanceWidth())
+                .sum() * scale;
+        System.out.println(length);
 
-        lines = glyphData.contours().stream()
-                .flatMap(c -> {
-                    List<FontCircle> fontCircles = new ArrayList<>(points.subList(Short.toUnsignedInt(c.offset()), Short.toUnsignedInt(c.end()) + 1));
+        points = new ArrayList<>();
+        lines = new ArrayList<>();
 
-                    int firstOnCurveIdx;
-                    for (firstOnCurveIdx = 0; firstOnCurveIdx < fontCircles.size(); firstOnCurveIdx++)
-                        if (fontCircles.get(firstOnCurveIdx).onCurve) break;
+        Vec2f pen = new Vec2f(-500 + ((1000 - length) / 2), 0);
 
-                    Collections.rotate(fontCircles, -firstOnCurveIdx);
-                    fontCircles.add(fontCircles.getFirst());
+        for (int codePoint: s.codePoints().toArray()) {
+            int glyphId = fontData.getGlyphId(codePoint);
+            GlyphData glyphData = fontData.glyphData(glyphId);
 
-                    List<Segment> l = new ArrayList<>();
-                    FontCircle previous = null;
-                    FontCircle prePrevious = null;
-                    for (FontCircle present : fontCircles) {
-                        if (previous == null) {
+            Vec2f constPen = pen;
+            List<FontPointFloat> glyphPoints = glyphData.points().stream()
+                    .map(p -> new FontPointFloat(new Vec2f(p.x(), p.y()).scale(scale).add(constPen), p.onCurve()))
+                    .toList();
+
+            points.addAll(
+                    glyphPoints.stream()
+                            .map(fp -> new FontCircle(new Circle(fp.point, 5), fp.onCurve()))
+                            .toList()
+            );
+
+            lines.addAll(glyphData.contours().stream()
+                    .flatMap(c -> {
+                        List<FontPointFloat> contourPoints = new ArrayList<>(
+                                glyphPoints.subList(Short.toUnsignedInt(c.offset()), Short.toUnsignedInt(c.end()) + 1)
+                        );
+
+                        int firstOnCurveIdx;
+                        for (firstOnCurveIdx = 0; firstOnCurveIdx < contourPoints.size(); firstOnCurveIdx++)
+                            if (contourPoints.get(firstOnCurveIdx).onCurve) break;
+
+                        Collections.rotate(contourPoints, -firstOnCurveIdx);
+                        contourPoints.add(contourPoints.getFirst());
+
+                        List<Segment> l = new ArrayList<>();
+                        FontPointFloat previous = null;
+                        FontPointFloat prePrevious = null;
+                        for (FontPointFloat present : contourPoints) {
+                            if (previous == null) {
+                                previous = present;
+                                continue;
+                            }
+
+                            if (present.onCurve) {
+                                if (previous.onCurve) {
+                                    l.add(new Segment(previous.point(), present.point()));
+                                } else {
+                                    BezierCurveOrder2 curve = new BezierCurveOrder2(prePrevious.point(), previous.point(), present.point());
+                                    l.addAll(curve.linearize(15));
+                                }
+                            } else {
+                                if (previous.onCurve) {
+                                    prePrevious = previous;
+                                } else {
+                                    Vec2f middlePoint = present.point().middlePoint(previous.point());
+                                    FontPointFloat phantom = new FontPointFloat(middlePoint, true);
+                                    BezierCurveOrder2 curve = new BezierCurveOrder2(prePrevious.point(), previous.point(), phantom.point());
+                                    l.addAll(curve.linearize(15));
+                                    prePrevious = phantom;
+                                }
+                            }
+
                             previous = present;
-                            continue;
                         }
 
-                        if (present.onCurve) {
-                            if (previous.onCurve) {
-                                l.add(new Segment(previous.point(), present.point()));
-                            } else {
-                                BezierCurveOrder2 curve = new BezierCurveOrder2(prePrevious.point(), previous.point(), present.point());
-                                l.addAll(curve.linearize(15));
-                            }
-                        } else {
-                            if (previous.onCurve) {
-                                prePrevious = previous;
-                            } else {
-                                Vec2f middlePoint = present.point().middlePoint(previous.point());
-                                FontCircle phantom = new FontCircle(new Circle(middlePoint, present.circle.radius()), true);
-                                BezierCurveOrder2 curve = new BezierCurveOrder2(prePrevious.point(), previous.point(), phantom.point());
-                                l.addAll(curve.linearize(15));
-                                prePrevious = phantom;
-                            }
-                        }
+                        return l.stream();
+                    }).toList()
+            );
 
-                        previous = present;
-                    }
+            pen = pen.add(new Vec2f(glyphData.advanceWidth() * scale, 0));
+        }
 
-                    return l.stream();
-                }).toList();
-        System.out.println(points);
-        System.out.println(lines);
+        //System.out.println(points);
+        //System.out.println(lines);
     }
 
     public void run() {
@@ -290,12 +307,12 @@ public class Game {
         //renderer.addSegment(new Segment(new Vec2f(13, 13), new Vec2f(13, -13)), 1, 0.7f, 0.2f, 0.4f, 1);
         //renderer.addSegment(new Segment(new Vec2f(13, 13), new Vec2f(20, -13)), 3, 0.3f, 0.6f, 0.7f, 1);
         //renderer.addCircle(new Circle(new Vec2f(-15, 15), 4), 0.7f, 0.2f, 0.1f, 1);
-        points.forEach(
+        /*points.forEach(
                 fp -> renderer.addCircle(
                         fp.circle,
                         fp.onCurve ? Color.GREEN : Color.RED
                 )
-        );
+        );*/
 
         lines.forEach(l -> renderer.addSegment(l, 1, Color.BLUE));
 
@@ -344,6 +361,8 @@ public class Game {
         eventBus.postEvent(new GameClosedEvent());
         eventBus.dispatchDeferredEvents();
     }
+
+    record FontPointFloat(Vec2f point, boolean onCurve) { }
 
     record FontCircle(Circle circle, boolean onCurve) {
         public Vec2f point() {

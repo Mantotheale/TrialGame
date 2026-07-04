@@ -82,6 +82,10 @@ public record Vec2f(float x, float y) {
         return new Vec2f((x + other.x) / 2, (y + other.y) / 2);
     }
 
+    public Vec2f roundComponents() {
+        return new Vec2f(Math.round(x), Math.round(y));
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

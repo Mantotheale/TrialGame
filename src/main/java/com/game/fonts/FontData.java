@@ -3,17 +3,25 @@ package com.game.fonts;
 import com.game.math.Rectangle;
 import com.game.math.Vec2f;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class FontData {
+    private final HeadTable headTable;
     private final Cmap characterMapping;
     private final HmtxTable horizontalMetrics;
     private final GlyfTable glyphTable;
 
-    FontData(Cmap characterMapping, HmtxTable horizontalMetrics, GlyfTable glyphTable) {
+    FontData(HeadTable headTable, Cmap characterMapping, HmtxTable horizontalMetrics, GlyfTable glyphTable) {
+        this.headTable = headTable;
         this.characterMapping = characterMapping;
         this.horizontalMetrics = horizontalMetrics;
         this.glyphTable = glyphTable;
+    }
+
+    public int fontSize() {
+        return Short.toUnsignedInt(headTable.unitsPerEm());
     }
 
     public int getGlyphId(int unicode) {
@@ -22,23 +30,69 @@ public class FontData {
 
     public GlyphData glyphData(int glyphId) {
         Glyph glyph = glyphTable.glyphs().get(glyphId);
+        LongHorMetric metrics = horizontalMetrics.horizontalMetrics().get(glyphId);
 
-        if (glyph instanceof Glyph.SimpleGlyph(GlyphHeader glyphHeader, List<Contour> contours, _, _, _, List<FontPoint> points)) {
-            Vec2f bboxCenter = new Vec2f(
-                    glyphHeader.xMin() + (glyphHeader.xMax() - glyphHeader.xMin()) / 2f,
-                    glyphHeader.yMin() + (glyphHeader.yMax() - glyphHeader.yMin()) / 2f
-            );
-            Vec2f bboxDimensions = new Vec2f(
-                    glyphHeader.xMax() - glyphHeader.xMin(),
-                    glyphHeader.yMax() - glyphHeader.yMin()
-            );
-            Rectangle boundingBox = new Rectangle(bboxCenter, bboxDimensions);
+        return switch (glyph) {
+            case Glyph.EmptyGlyph _ ->
+                    new GlyphData(
+                            glyphId,
+                            new Rectangle(Vec2f.ZERO, 1, 1),
+                            List.of(),
+                            List.of(),
+                            Short.toUnsignedInt(metrics.advanceWidth()),
+                            metrics.leftSideBearing()
+                    );
+            case Glyph.SimpleGlyph(GlyphHeader glyphHeader, List<Contour> contours, _, _, _, List<FontPoint> points) ->
+                    new GlyphData(
+                            glyphHeader.idx(),
+                            glyphHeader.boundingBox(),
+                            points,
+                            contours,
+                            Short.toUnsignedInt(metrics.advanceWidth()),
+                            metrics.leftSideBearing()
+                    );
+            case Glyph.CompositeGlyph(GlyphHeader glyphHeader, List<GlyphComponent> components, _) -> {
+                List<FontPoint> points = new ArrayList<>();
+                List<Contour> contours =  new ArrayList<>();
+                for (GlyphComponent component: components) {
+                    switch (component.arguments()) {
+                        case GlyphComponentArguments.Offset(short xOffset, short yOffset) -> {
+                            GlyphData glyphData = glyphData(component.glyphIdx());
+                            GlyphTransformation transformation = component.transformation();
 
-            return new GlyphData(glyphHeader.idx(), boundingBox, points, contours);
-        } else {
-            throw new UnsupportedOperationException("Composite glyphs not yet supported");
-        }
+                            Stream<FontPoint> stream = glyphData.points().stream()
+                                    .map(p -> p.applyTransformation(transformation));
+
+                            Vec2f offset = transformation.applyToOffset() ?
+                                    transformation.transformPoint(new Vec2f(xOffset, yOffset)) :
+                                    new Vec2f(xOffset, yOffset);
+
+                            if (transformation.roundToGrid())
+                                offset = offset.roundComponents();
+
+                            short previousPoints = (short) points.size();
+                            Vec2f finalOffset = offset;
+                            points.addAll(stream.map(p -> p.applyOffset(finalOffset)).toList());
+                            contours.addAll(glyphData.contours().stream().map(c -> c.shift(previousPoints)).toList());
+
+                            if (component.useComponentMetrics()) {
+                                metrics = horizontalMetrics.horizontalMetrics().get(component.glyphIdx());
+                            }
+                        }
+                        case GlyphComponentArguments.Points _
+                                -> throw new UnsupportedOperationException("Composite glyphs with point components are not yet supported");
+                    }
+                }
+
+                yield new GlyphData(
+                        glyphHeader.idx(),
+                        glyphHeader.boundingBox(),
+                        points,
+                        contours,
+                        Short.toUnsignedInt(metrics.advanceWidth()),
+                        metrics.leftSideBearing()
+                );
+            }
+        };
     }
-
-
 }

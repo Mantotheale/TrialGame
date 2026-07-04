@@ -8,5 +8,7 @@ public record GlyphData(
         int id,
         Rectangle boundingBox,
         List<FontPoint> points,
-        List<Contour> contours
+        List<Contour> contours,
+        int advanceWidth,
+        int leftSideBearing
 ) { }
