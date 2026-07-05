@@ -79,8 +79,30 @@ public class FontData {
                                 metrics = horizontalMetrics.horizontalMetrics().get(component.glyphIdx());
                             }
                         }
-                        case GlyphComponentArguments.Points _
-                                -> throw new UnsupportedOperationException("Composite glyphs with point components are not yet supported");
+                        case GlyphComponentArguments.Points(short parentPointId, short childPointId) -> {
+                            GlyphData glyphData = glyphData(component.glyphIdx());
+                            GlyphTransformation transformation = component.transformation();
+
+                            List<FontPoint> transformedChildPoints = glyphData.points().stream()
+                                    .map(p -> p.applyTransformation(transformation))
+                                    .toList();
+
+                            FontPoint parentPoint = points.get(parentPointId);
+                            FontPoint childPoint = transformedChildPoints.get(childPointId);
+
+                            Vec2f offset = new Vec2f(
+                                    parentPoint.x() - childPoint.x(),
+                                    parentPoint.y() - childPoint.y()
+                            );
+
+                            short previousPoints = (short) points.size();
+                            points.addAll(transformedChildPoints.stream().map(p -> p.applyOffset(offset)).toList());
+                            contours.addAll(glyphData.contours().stream().map(c -> c.shift(previousPoints)).toList());
+
+                            if (component.useComponentMetrics()) {
+                                metrics = horizontalMetrics.horizontalMetrics().get(component.glyphIdx());
+                            }
+                        }
                     }
                 }
 
