@@ -106,7 +106,7 @@ public class FontUtils {
                     .orElseThrow(() -> new IllegalArgumentException("The specified font doesn't contain a glyf table"));
             GlyfTable glyfTable = GlyfTable.fromChannel(channel, u8Buffer, u16Buffer, glyfTableHeader.offset(), locaTable);
 
-            return new FontData(headTable, cmap, hmtxTable, glyfTable);
+            return new FontData(headTable, cmap, hmtxTable, glyfTable, hheaTable);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

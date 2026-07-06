@@ -35,6 +35,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -157,23 +159,46 @@ public class Game {
                 mainCharacterLocation = event.position();
         });*/
 
-        FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/NotoSansJP-Regular.ttf"));
-        //FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/JetBrainsMono-Regular.ttf"));
-        float scale = 100f / fontData.fontSize();
+        //FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/NotoSansJP-Regular.ttf"));
+        FontData fontData = FontUtils.openFont(Path.of("src/main/resources/fonts/JetBrainsMono-Regular.ttf"));
+        float scale = 75f / fontData.fontSize();
+        float lineHeight = fontData.lineHeight() * scale;
 
-        String s = "珠里が大好き";
+        String s = "Salve.\nBuongiorno!\nUn caffè, perfavore.\nEcco a lei.";
 
-        float length = s.codePoints()
-                .map(code -> fontData.glyphData(fontData.getGlyphId(code)).advanceWidth())
-                .sum() * scale;
-        System.out.println(length);
+        List<Float> lineLengths = new ArrayList<>();
+        int len = 0;
+        for (int codePoint: s.codePoints().toArray()) {
+            if (codePoint == '\n') {
+                lineLengths.add(len * scale);
+                len = 0;
+                continue;
+            }
+
+            len += fontData.glyphData(fontData.getGlyphId(codePoint)).advanceWidth();
+        }
+        if (len != 0) lineLengths.add(len * scale);
+
+        System.out.println(lineLengths);
 
         points = new ArrayList<>();
         lines = new ArrayList<>();
 
-        Vec2f pen = new Vec2f(-500 + ((1000 - length) / 2), 0);
+        int lineCounter = 0;
+        Function<Integer, Vec2f> lineNumberLengthToPen = (lineNumber) ->
+                new Vec2f(
+                        -500 + ((1000 - lineLengths.get(lineNumber)) / 2),
+                        500 - ((1000 - lineHeight * lineLengths.size()) / 2) - lineHeight * lineNumber
+                );
 
+        Vec2f pen = lineNumberLengthToPen.apply(0);
         for (int codePoint: s.codePoints().toArray()) {
+            if (codePoint == '\n') {
+                lineCounter++;
+                pen = lineNumberLengthToPen.apply(lineCounter);
+                continue;
+            }
+
             int glyphId = fontData.getGlyphId(codePoint);
             GlyphData glyphData = fontData.glyphData(glyphId);
 

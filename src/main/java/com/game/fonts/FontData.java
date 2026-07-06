@@ -12,16 +12,22 @@ public class FontData {
     private final Cmap characterMapping;
     private final HmtxTable horizontalMetrics;
     private final GlyfTable glyphTable;
+    private final HheaTable hheaTable;
 
-    FontData(HeadTable headTable, Cmap characterMapping, HmtxTable horizontalMetrics, GlyfTable glyphTable) {
+    FontData(HeadTable headTable, Cmap characterMapping, HmtxTable horizontalMetrics, GlyfTable glyphTable, HheaTable hheaTable) {
         this.headTable = headTable;
         this.characterMapping = characterMapping;
         this.horizontalMetrics = horizontalMetrics;
         this.glyphTable = glyphTable;
+        this.hheaTable = hheaTable;
     }
 
     public int fontSize() {
         return Short.toUnsignedInt(headTable.unitsPerEm());
+    }
+
+    public int lineHeight() {
+        return hheaTable.ascender() - hheaTable.descender() + hheaTable.lineGap();
     }
 
     public int getGlyphId(int unicode) {
