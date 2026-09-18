@@ -179,8 +179,6 @@ public class Game {
         }
         if (len != 0) lineLengths.add(len * scale);
 
-        System.out.println(lineLengths);
-
         points = new ArrayList<>();
         lines = new ArrayList<>();
 
