@@ -30,18 +30,46 @@ import imgui.ImGui;
 import imgui.ImGuiIO;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.freetype.FreeType;
+import org.lwjgl.util.msdfgen.MSDFGenBitmap;
+import org.lwjgl.util.msdfgen.MSDFGenTransform;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+import static org.lwjgl.BufferUtils.createByteBuffer;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.stb.STBImageWrite.stbi_flip_vertically_on_write;
+import static org.lwjgl.stb.STBImageWrite.stbi_write_png;
+import static org.lwjgl.system.MemoryStack.stackPush;
+import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.util.msdfgen.MSDFGen.*;
+import static org.lwjgl.util.msdfgen.MSDFGenExt.*;
 
 public class Game {
     private final static double ONE_SEC_TIME = 1;
@@ -264,6 +292,157 @@ public class Game {
 
         //System.out.println(points);
         //System.out.println(lines);
+        ByteBuffer fontDataMSDF = null;
+        try {
+            fontDataMSDF = ioResourceToByteBuffer("fonts/JetBrainsMono-Regular.ttf", 512 * 1024);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        try (MemoryStack stack = stackPush()) {
+            PointerBuffer pp = stack.callocPointer(1);
+            DoubleBuffer dp = stack.callocDouble(1);
+
+            check(msdf_ft_set_load_callback(name -> FreeType.getLibrary().getFunctionAddress(memByteBuffer(name, memByteBufferNT1(name).capacity() + 1))));
+            check(msdf_ft_init(pp));
+            long ft = pp.get(0);
+
+            check(msdf_ft_load_font_data(ft, fontDataMSDF, pp));
+            long font = pp.get(0);
+
+            if (dp.get(0) != 0.0) throw new AssertionError();
+            check(msdf_ft_font_load_glyph(font, 'A', MSDF_FONT_SCALING_EM_NORMALIZED, dp, pp));
+            if (dp.get(0) == 0.0) throw new AssertionError();
+
+            long shape = pp.get(0);
+
+            check(msdf_shape_normalize(shape));
+            check(msdf_shape_edge_colors_simple(shape, 3.0));
+
+            MSDFGenBitmap bitmap = MSDFGenBitmap.calloc(stack);
+            check(msdf_bitmap_alloc(MSDF_BITMAP_TYPE_MSDF, 32, 32, bitmap));
+
+            check(msdf_generate_msdf(bitmap, shape, MSDFGenTransform.calloc(stack)
+                    .scale(it -> it
+                            .x(32.0)
+                            .y(32.0))
+                    .translation(it -> it
+                            .x(0.125)
+                            .y(0.125))
+                    .distance_mapping(it -> it.
+                            lower(-0.5 * 0.125)
+                            .upper(0.5 * 0.125))
+            ));
+
+            MSDFGenBitmap output = bitmap;
+            /*
+            MSDFGenBitmap output = MSDFGenBitmap.calloc(stack);
+            check(msdf_bitmap_alloc(MSDF_BITMAP_TYPE_MSDF, 32, 32, output));
+
+            msdf_render_sdf(output, bitmap);
+            //*/
+
+            IntBuffer pi = stack.mallocInt(1);
+            msdf_bitmap_get_channel_count(output, pi);
+            int channelCount = pi.get(0);
+
+            ByteBuffer pixels = getBitmapU8(stack, output, channelCount);
+
+            //msdf_bitmap_free(output);
+            msdf_bitmap_free(bitmap);
+
+            stbi_flip_vertically_on_write(true);
+            stbi_write_png("msdfgen.png", output.width(), output.height(), channelCount, pixels, 0);
+
+            memFree(pixels);
+
+            nmsdf_ft_font_destroy(font);
+            msdf_ft_deinit(ft);
+
+            Objects.requireNonNull(msdf_ft_get_load_callback()).free();
+
+            ByteBuffer mask = memAlloc(output.width() * output.height());
+            for (int i = 0; i < mask.capacity(); i++) {
+                int r = pixels.get(i * 3)     & 0xFF;
+                int g = pixels.get(i * 3 + 1) & 0xFF;
+                int b = pixels.get(i * 3 + 2) & 0xFF;
+                int med = max(min(r, g), min(max(r, g), b));
+                mask.put(i, (byte) (med > 127 ? 255 : 0));
+            }
+            stbi_write_png("msdfgen_mask.png", output.width(), output.height(), 1, mask, 0);
+            memFree(mask);
+        }
+    }
+
+    private static ByteBuffer getBitmapU8(MemoryStack stack, MSDFGenBitmap bitmap, int channelCount) {
+        PointerBuffer pp = stack.mallocPointer(1);
+
+        check(msdf_bitmap_get_byte_size(bitmap, pp));
+        long byteSize = pp.get(0);
+
+        check(msdf_bitmap_get_pixels(bitmap, pp));
+        FloatBuffer pixels = memFloatBuffer(pp.get(0), (int)byteSize >> 2);
+
+        ByteBuffer data = memAlloc(pixels.capacity());
+        for (int i = 0; i < pixels.capacity(); i++) {
+            // clamp to [0, 1] range
+            float v = Math.clamp(pixels.get(i), 0.0f, 1.0f);
+            // half-down rounding (this is what msdfgen does)
+            data.put(i, (byte)(~(int)(255.5f - 255.0f * v)));
+            // half-up rounding
+            //data.put(i, (byte)(255.f * v + 0.5f));
+        }
+
+        return data;
+    }
+
+    private static void check(int result) {
+        if (result != MSDF_SUCCESS) {
+            throw new IllegalStateException("Operation failed with error code: " + result);
+        }
+    }
+
+    public static ByteBuffer ioResourceToByteBuffer(String resource, int bufferSize) throws IOException {
+        ByteBuffer buffer;
+
+        Path path = resource.startsWith("http") ? null : Paths.get(resource);
+        if (path != null && Files.isReadable(path)) {
+            try (SeekableByteChannel fc = Files.newByteChannel(path)) {
+                buffer = BufferUtils.createByteBuffer((int)fc.size() + 1);
+                while (fc.read(buffer) != -1) {
+                    ;
+                }
+            }
+        } else {
+            try (
+                    InputStream source = resource.startsWith("http")
+                            ? new URL(resource).openStream()
+                            : Game.class.getClassLoader().getResourceAsStream(resource);
+                    ReadableByteChannel rbc = Channels.newChannel(source)
+            ) {
+                buffer = createByteBuffer(bufferSize);
+
+                while (true) {
+                    int bytes = rbc.read(buffer);
+                    if (bytes == -1) {
+                        break;
+                    }
+                    if (buffer.remaining() == 0) {
+                        buffer = resizeBuffer(buffer, buffer.capacity() * 3 / 2); // 50%
+                    }
+                }
+            }
+        }
+
+        buffer.flip();
+        return memSlice(buffer);
+    }
+
+    private static ByteBuffer resizeBuffer(ByteBuffer buffer, int newCapacity) {
+        ByteBuffer newBuffer = BufferUtils.createByteBuffer(newCapacity);
+        buffer.flip();
+        newBuffer.put(buffer);
+        return newBuffer;
     }
 
     public void run() {
