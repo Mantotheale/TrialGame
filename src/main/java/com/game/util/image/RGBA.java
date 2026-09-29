@@ -1,4 +1,4 @@
-package com.game.util;
+package com.game.util.image;
 
 import org.jetbrains.annotations.NotNull;
 

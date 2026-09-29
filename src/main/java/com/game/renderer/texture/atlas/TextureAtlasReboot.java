@@ -1,6 +1,6 @@
 package com.game.renderer.texture.atlas;
 
-import com.game.util.Image;
+import com.game.util.image.Image;
 import com.game.util.Pair;
 
 import java.util.*;

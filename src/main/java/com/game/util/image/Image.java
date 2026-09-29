@@ -1,4 +1,4 @@
-package com.game.util;
+package com.game.util.image;
 
 import com.game.util.exceptions.ImageLoadException;
 import com.game.util.exceptions.PixelOutOfBoundsException;
@@ -11,7 +11,7 @@ import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 
-public abstract class Image implements AutoCloseable {
+public abstract class Image implements AutoCloseable, PixelSource {
     private final int width;
     private final int height;
     protected final ByteBuffer buffer;
@@ -23,10 +23,6 @@ public abstract class Image implements AutoCloseable {
 
     public static Image blank(int width, int height) {
         return new LWJGLBackedImage(width, height);
-    }
-
-    public static Image paddedView(Image image, int padding) {
-        return new PaddedImageView(image, padding);
     }
 
     protected Image(int width, int height, ByteBuffer buffer) {
@@ -51,13 +47,18 @@ public abstract class Image implements AutoCloseable {
         return buffer.asReadOnlyBuffer().order(ByteOrder.nativeOrder());
     }
 
-    public RGBA getPixel(int x, int y) {
+    private int bufferIndex(int x, int y) {
         if (this.isDeleted) throw new IllegalStateException("Image has been deleted");
 
         if (x < 0 || x >= this.width || y < 0 || y >= this.height)
             throw new PixelOutOfBoundsException(x, y, this.width, this.height);
 
-        int offset = (y * this.width + x) * 4;
+        return (y * this.width + x) * 4;
+    }
+
+    public RGBA getPixel(int x, int y) {
+        int offset = this.bufferIndex(x , y);
+
         return new RGBA(
                 this.buffer.get(offset),
                 this.buffer.get(offset + 1),
@@ -67,20 +68,18 @@ public abstract class Image implements AutoCloseable {
     }
 
     public void setPixel(int x, int y, RGBA color) {
-        if (this.isDeleted) throw new IllegalStateException("Image has been deleted");
+        int offset = this.bufferIndex(x, y);
 
-        if (x < 0 || x >= this.width || y < 0 || y >= this.height)
-            throw new PixelOutOfBoundsException(x, y, this.width, this.height);
-
-        int offset = (y * this.width + x) * 4;
         this.buffer.put(offset, color.bitsR());
         this.buffer.put(offset + 1, color.bitsG());
         this.buffer.put(offset + 2, color.bitsB());
         this.buffer.put(offset + 3, color.bitsA());
     }
 
-    public void copyImageAtOffset(Image src, int offsetX, int offsetY, int padding) {
+    public void copyPixelSourceAtOffset(PixelSource src, int offsetX, int offsetY) {
         if (this.isDeleted) throw new IllegalStateException("Image has been deleted");
+
+        if (offsetX < 0 || offsetX >= this.width || offsetY < 0 || offsetY >= this.height)
 
         for (int i = 0; i < src.width(); i++) {
             for (int j = 0; j < src.height(); j++) {
@@ -171,64 +170,6 @@ public abstract class Image implements AutoCloseable {
         @Override
         protected void free() {
             MemoryUtil.memFree(this.buffer);
-        }
-    }
-
-    private static class PaddedImageView extends Image {
-        private final Image image;
-        private final int padding;
-
-        public PaddedImageView(Image image, int padding) {
-            if (padding < 0) throw new IllegalArgumentException("Padding must be non negative");
-
-            this.image = image;
-            this.padding = padding;
-            super(
-                    image.width + padding * 2,
-                    image.height + padding * 2,
-                    image.buffer
-            );
-        }
-
-        @Override
-        protected void free() { }
-
-        @Override
-        public ByteBuffer asRawBuffer() {
-            throw new UnsupportedOperationException("Can't access raw buffer of a view");
-        }
-
-        private int mappedAxis(int axis, int imageDimension) {
-            if (axis < this.padding) {
-                return 0;
-            } else if (axis >= imageDimension + this.padding) {
-                return imageDimension - 1;
-            } else {
-                return axis - this.padding;
-            }
-        }
-
-        @Override
-        public RGBA getPixel(int x, int y) {
-            if (this.isDeleted()) throw new IllegalStateException("Image has been deleted");
-
-            if (x < 0 || x >= this.width() || y < 0 || y >= this.height())
-                throw new PixelOutOfBoundsException(x, y, this.width(), this.height());
-
-            int resultingX = mappedAxis(x, image.width());
-            int resultingY = mappedAxis(y, image.height);
-
-            return this.image.getPixel(resultingX, resultingY);
-        }
-
-        @Override
-        public void setPixel(int x, int y, RGBA color) {
-            throw new UnsupportedOperationException("Can't modify a view");
-        }
-
-        @Override
-        public void copyImageAtOffset(Image src, int offsetX, int offsetY, int padding) {
-            throw new UnsupportedOperationException("Can't modify a view");
         }
     }
 }
