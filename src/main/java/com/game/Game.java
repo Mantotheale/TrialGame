@@ -2,38 +2,26 @@ package com.game;
 
 import com.game.camera.Camera;
 import com.game.camera.CameraProjection;
-import com.game.collision.CollisionManager;
-import com.game.entity.Entity;
-import com.game.entity.EntityManager;
 import com.game.event.*;
 import com.game.event.deferred.CloseGameRequestedEvent;
 import com.game.event.bus.EventBus;
-import com.game.event.deferred.EntityMovedEvent;
-import com.game.event.deferred.PlaySoundRequestEvent;
 import com.game.event.instant.*;
 import com.game.fonts.FontData;
-import com.game.fonts.FontPoint;
 import com.game.fonts.FontUtils;
 import com.game.fonts.GlyphData;
 import com.game.input.*;
 import com.game.math.*;
 import com.game.renderer.Renderer;
-import com.game.resourcemanager.ResourceManager;
-import com.game.sound.Sound;
-import com.game.sound.SoundDevice;
-import com.game.sound.SoundManager;
 import com.game.transform.*;
 import com.game.util.Color;
 import com.game.window.Window;
 import com.game.window.WindowBuilder;
-import imgui.ImGui;
-import imgui.ImGuiIO;
-import imgui.gl3.ImGuiImplGl3;
-import imgui.glfw.ImGuiImplGlfw;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.freetype.FreeType;
+import org.lwjgl.util.msdfgen.MSDFGen;
 import org.lwjgl.util.msdfgen.MSDFGenBitmap;
 import org.lwjgl.util.msdfgen.MSDFGenTransform;
 
@@ -54,10 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -192,11 +177,11 @@ public class Game {
         float scale = 75f / fontData.fontSize();
         float lineHeight = fontData.lineHeight() * scale;
 
-        String s = "Salve.\nBuongiorno!\nUn caffè, perfavore.\nEcco a lei.";
+        String str = "Salve.\nBuongiorno!\nUn caffè, perfavore.\nEcco a lei.";
 
         List<Float> lineLengths = new ArrayList<>();
         int len = 0;
-        for (int codePoint: s.codePoints().toArray()) {
+        for (int codePoint: str.codePoints().toArray()) {
             if (codePoint == '\n') {
                 lineLengths.add(len * scale);
                 len = 0;
@@ -218,7 +203,7 @@ public class Game {
                 );
 
         Vec2f pen = lineNumberLengthToPen.apply(0);
-        for (int codePoint: s.codePoints().toArray()) {
+        for (int codePoint: str.codePoints().toArray()) {
             if (codePoint == '\n') {
                 lineCounter++;
                 pen = lineNumberLengthToPen.apply(lineCounter);
@@ -339,14 +324,14 @@ public class Game {
             MSDFGenBitmap output = MSDFGenBitmap.calloc(stack);
             check(msdf_bitmap_alloc(MSDF_BITMAP_TYPE_MSDF, 32, 32, output));
 
-            msdf_render_sdf(output, bitmap);
+            msdf_render_sdf(output, msdfBitmapHandle);
             //*/
 
             IntBuffer pi = stack.mallocInt(1);
             msdf_bitmap_get_channel_count(output, pi);
             int channelCount = pi.get(0);
 
-            ByteBuffer pixels = getBitmapU8(stack, output, channelCount);
+            ByteBuffer pixels = getBitmapU8(output);
 
             //msdf_bitmap_free(output);
             msdf_bitmap_free(bitmap);
@@ -372,10 +357,64 @@ public class Game {
             stbi_write_png("msdfgen_mask.png", output.width(), output.height(), 1, mask, 0);
             memFree(mask);
         }
+
+        int op_result = msdf_ft_set_load_callback(
+                name -> FreeType.getLibrary()
+                        .getFunctionAddress(MemoryUtil.memASCII(name))
+        );
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+
+        PointerBuffer pointerBuffer = MemoryUtil.memCallocPointer(1);
+        op_result = msdf_ft_init(pointerBuffer);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+        long msdfgenHandle = pointerBuffer.get(0);
+        if (msdfgenHandle == MemoryUtil.NULL) throw new AssertionError();
+        System.out.println("MsdfGen Handle: " + msdfgenHandle);
+
+        op_result = msdf_ft_load_font(msdfgenHandle, "src/main/resources/fonts/JetBrainsMono-Regular.ttf", pointerBuffer);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+        long msdfFontHandle = pointerBuffer.get(0);
+        if (msdfFontHandle == MemoryUtil.NULL) throw new AssertionError();
+        System.out.println("MsdfFont Handle: " + msdfFontHandle);
+
+        DoubleBuffer doubleBuffer = MemoryUtil.memCallocDouble(1);
+        op_result = msdf_ft_font_load_glyph(msdfFontHandle, 'A', MSDF_FONT_SCALING_EM_NORMALIZED, doubleBuffer, pointerBuffer);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+        long msdfShapeHandle = pointerBuffer.get(0);
+        if (msdfShapeHandle == MemoryUtil.NULL) throw new AssertionError();
+        double msdfAdvance = doubleBuffer.get(0);
+        if (msdfAdvance == 0) throw new AssertionError();
+        System.out.println("MsdfShape Handle: " + msdfShapeHandle);
+        System.out.println("MsdfAdvance: " + msdfAdvance);
+
+        op_result = msdf_shape_normalize(msdfShapeHandle);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+
+        op_result = msdf_shape_edge_colors_simple(msdfShapeHandle, 3.0);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+
+        MSDFGenBitmap msdfBitmapHandle = MSDFGenBitmap.calloc();
+        op_result = msdf_bitmap_alloc(MSDF_BITMAP_TYPE_MSDF, 32, 32, msdfBitmapHandle);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+
+        MSDFGenTransform msdfTransformHandle = MSDFGenTransform.calloc()
+                .scale(s -> s.set(32.0, 32.0))
+                .translation(t -> t.set(0.125, 0.125))
+                .distance_mapping(r -> r.set(-0.5 * 0.125, 0.5 * 0.125));
+        op_result = msdf_generate_msdf(msdfBitmapHandle, msdfShapeHandle, msdfTransformHandle);
+        if (op_result != MSDFGen.MSDF_SUCCESS) throw new AssertionError();
+
+        ByteBuffer pixels = getBitmapU8(msdfBitmapHandle);
+        msdf_bitmap_free(msdfBitmapHandle);
+
+        stbi_flip_vertically_on_write(true);
+        stbi_write_png("msdfgenOther.png", 32, 32, 3, pixels, 0);
+
+        memFree(pixels);
     }
 
-    private static ByteBuffer getBitmapU8(MemoryStack stack, MSDFGenBitmap bitmap, int channelCount) {
-        PointerBuffer pp = stack.mallocPointer(1);
+    private static ByteBuffer getBitmapU8(MSDFGenBitmap bitmap) {
+        PointerBuffer pp = MemoryUtil.memAllocPointer(1);
 
         check(msdf_bitmap_get_byte_size(bitmap, pp));
         long byteSize = pp.get(0);
@@ -393,6 +432,7 @@ public class Game {
             //data.put(i, (byte)(255.f * v + 0.5f));
         }
 
+        MemoryUtil.memFree(pp);
         return data;
     }
 
