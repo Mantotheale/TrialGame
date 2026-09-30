@@ -25,6 +25,10 @@ public abstract class Image implements AutoCloseable, PixelSource {
         return new LWJGLBackedImage(width, height);
     }
 
+    public static Image copy(PixelSource source) {
+        return new LWJGLBackedImage(source);
+    }
+
     protected Image(int width, int height, ByteBuffer buffer) {
         this.width = width;
         this.height = height;
@@ -80,31 +84,17 @@ public abstract class Image implements AutoCloseable, PixelSource {
         if (this.isDeleted) throw new IllegalStateException("Image has been deleted");
 
         if (offsetX < 0 || offsetX >= this.width || offsetY < 0 || offsetY >= this.height)
+            throw new PixelOutOfBoundsException(offsetX, offsetY, this.width, this.height);
 
-        for (int i = 0; i < src.width(); i++) {
-            for (int j = 0; j < src.height(); j++) {
-                setPixel(offsetX + padding + i, offsetY + padding + j, src.getPixel(i, j));
-            }
-        }
+        int srcWidth = src.width();
+        int srcHeight = src.height();
 
-        for (int p = 0; p < padding; p++) {
-            for (int i = 0; i < src.width; i++) {
-                setPixel(offsetX + padding + i, offsetY + p, src.getPixel(i, 0));
-                setPixel(offsetX + padding + i, offsetY + padding + src.height + p, src.getPixel(i, src.height - 1));
-            }
+        if (offsetX + srcWidth > this.width || offsetY + srcHeight > this.height)
+            throw new PixelOutOfBoundsException(offsetX + srcWidth - 1, offsetY + srcHeight - 1, this.width, this.height);
 
-            for (int j = 0; j < src.height; j++) {
-                setPixel(offsetX + p, offsetY + padding + j, src.getPixel(0, j));
-                setPixel(offsetX + padding + src.width + p, offsetY + padding + j, src.getPixel(src.width - 1, j));
-            }
-
-            for (int k = 0; k < padding; k++) {
-                setPixel(offsetX + p, offsetY + k, src.getPixel(0, 0));
-                setPixel(offsetX + p, offsetY + padding + src.height + k, src.getPixel(0, src.height - 1));
-                setPixel(offsetX + padding + src.width + p, offsetY + k, src.getPixel(src.width - 1, 0));
-                setPixel(offsetX + padding + src.width + p, offsetY + padding + src.height + k, src.getPixel(src.width - 1, src.height - 1));
-            }
-        }
+        for (int j = 0; j < srcHeight; j++)
+            for (int i = 0; i < srcWidth; i++)
+                setPixel(offsetX + i, offsetY + j, src.getPixel(i, j));
     }
 
     public boolean isDeleted() {
@@ -165,6 +155,17 @@ public abstract class Image implements AutoCloseable, PixelSource {
 
             int size = Math.multiplyExact(Math.multiplyExact(width, height), 4);
             super(width, height, MemoryUtil.memCalloc(size));
+        }
+
+        public LWJGLBackedImage(PixelSource src) {
+            this(src.width(), src.height());
+
+            try {
+                copyPixelSourceAtOffset(src, 0, 0);
+            } catch (Exception e) {
+                free();
+                throw e;
+            }
         }
 
         @Override
